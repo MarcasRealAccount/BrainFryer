@@ -6,6 +6,8 @@
 #include <Brainfryer/Renderer/Swapchain.h>
 #include <Brainfryer/Window/Window.h>
 
+#include <iostream>
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
 	Brainfryer::WindowSpecification specs;

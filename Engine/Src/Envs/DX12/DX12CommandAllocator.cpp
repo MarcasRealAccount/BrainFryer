@@ -12,7 +12,7 @@ namespace Brainfryer::DX12
 			return;
 	}
 
-	DX12CommandAllocator::DX12CommandAllocator(ID3D12Device10* device, ECommandListType type)
+	DX12CommandAllocator::DX12CommandAllocator(ID3D12Device9* device, ECommandListType type)
 	    : m_Type(type)
 	{
 		if (!HRValidate(device->CreateCommandAllocator(DX12CommandListType(m_Type), m_Allocator, m_Allocator)))
@@ -42,7 +42,7 @@ namespace Brainfryer::DX12
 		return list;
 	}
 
-	std::vector<std::unique_ptr<CommandList>> DX12CommandAllocator::allocate(ID3D12Device10* device, std::size_t numCommandLists)
+	std::vector<std::unique_ptr<CommandList>> DX12CommandAllocator::allocate(ID3D12Device9* device, std::size_t numCommandLists)
 	{
 		std::vector<std::unique_ptr<CommandList>> list(numCommandLists);
 		for (std::size_t i = 0; i < numCommandLists; ++i)

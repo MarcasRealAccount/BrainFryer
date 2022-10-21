@@ -74,7 +74,7 @@ namespace Brainfryer::DX12
 
 	void DX12Swapchain::bind(CommandList* commandList)
 	{
-		Com<ID3D12GraphicsCommandList7> commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
+		auto& commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
 
 		auto rect = m_Window->windowRect();
 
@@ -109,7 +109,7 @@ namespace Brainfryer::DX12
 
 	void DX12Swapchain::clear(CommandList* commandList, float r, float g, float b, float a)
 	{
-		Com<ID3D12GraphicsCommandList7> commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
+		auto& commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
 
 		FLOAT clearColor[4] { r, g, b, a };
 
@@ -120,7 +120,7 @@ namespace Brainfryer::DX12
 
 	void DX12Swapchain::unbind(CommandList* commandList)
 	{
-		Com<ID3D12GraphicsCommandList7> commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
+		auto& commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
 
 		D3D12_RESOURCE_BARRIER barrier {};
 		barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

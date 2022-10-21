@@ -9,14 +9,14 @@ namespace Brainfryer::DX12
 	{
 	public:
 		DX12CommandAllocator(const CommandAllocatorInfo& info);
-		DX12CommandAllocator(ID3D12Device10* device, ECommandListType type);
+		DX12CommandAllocator(ID3D12Device9* device, ECommandListType type);
 		DX12CommandAllocator(DX12CommandAllocator&& move) noexcept;
 		~DX12CommandAllocator();
 
 		virtual void reset() override;
 
 		virtual std::vector<std::unique_ptr<CommandList>> allocate(std::size_t numCommandLists) override;
-		std::vector<std::unique_ptr<CommandList>>         allocate(ID3D12Device10* device, std::size_t numCommandLists);
+		std::vector<std::unique_ptr<CommandList>>         allocate(ID3D12Device9* device, std::size_t numCommandLists);
 
 		virtual ECommandListType type() const override { return m_Type; }
 

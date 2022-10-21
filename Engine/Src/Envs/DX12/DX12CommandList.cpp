@@ -17,7 +17,7 @@ namespace Brainfryer::DX12
 			return;
 	}
 
-	DX12CommandList::DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device10* device)
+	DX12CommandList::DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device9* device)
 	    : m_Allocator(allocator)
 	{
 		if (!HRValidate(device->CreateCommandList(0, DX12CommandListType(allocator->type()), allocator->handle().get(), nullptr, m_CommandList, m_CommandList)))

@@ -39,7 +39,7 @@ namespace Brainfryer::DX12
 
 	private:
 		Com<IDXGIFactory7>      m_Factory;
-		Com<ID3D12Device10>     m_Device;
+		Com<ID3D12Device9>      m_Device;
 		Com<ID3D12CommandQueue> m_CommandQueue;
 
 		std::vector<DX12CommandAllocator> m_CommandAllocators;

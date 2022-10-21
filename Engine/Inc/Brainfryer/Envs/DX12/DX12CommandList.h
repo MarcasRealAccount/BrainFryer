@@ -26,7 +26,7 @@ namespace Brainfryer::DX12
 	{
 	public:
 		DX12CommandList(DX12CommandAllocator* allocator);
-		DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device10* device);
+		DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device9* device);
 		DX12CommandList(DX12CommandList&& move) noexcept;
 		~DX12CommandList();
 
@@ -40,6 +40,6 @@ namespace Brainfryer::DX12
 
 	private:
 		DX12CommandAllocator*           m_Allocator;
-		Com<ID3D12GraphicsCommandList7> m_CommandList;
+		Com<ID3D12GraphicsCommandList6> m_CommandList;
 	};
 } // namespace Brainfryer::DX12

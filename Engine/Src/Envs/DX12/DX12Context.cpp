@@ -39,7 +39,7 @@ namespace Brainfryer::DX12
 				continue;
 			}
 
-			if (HRValidate(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, Com<ID3D12Device10>::UUID, nullptr)))
+			if (HRValidate(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, Com<ID3D12Device9>::UUID, nullptr)))
 				break;
 		}
 		if (!hardwareAdapter.valid())
@@ -55,7 +55,7 @@ namespace Brainfryer::DX12
 					continue;
 				}
 
-				if (HRValidate(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, Com<ID3D12Device>::UUID, nullptr)))
+				if (HRValidate(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, Com<ID3D12Device9>::UUID, nullptr)))
 					break;
 			}
 		}

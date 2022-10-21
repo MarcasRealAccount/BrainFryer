@@ -32,7 +32,7 @@ namespace Brainfryer::DX12
 		swapchainDesc.Scaling     = DXGI_SCALING_NONE;
 		swapchainDesc.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		swapchainDesc.AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED;
-		swapchainDesc.Flags       = 0;
+		swapchainDesc.Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 		Com<IDXGISwapChain1> swapchain;
 		if (!HRValidate(factory->CreateSwapChainForHwnd(
@@ -134,7 +134,8 @@ namespace Brainfryer::DX12
 
 	void DX12Swapchain::present()
 	{
-		m_Swapchain->Present(0, 0);
+		if (!HRValidate(m_Swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING)))
+			return;
 		m_ImageIndex = m_Swapchain->GetCurrentBackBufferIndex();
 	}
 

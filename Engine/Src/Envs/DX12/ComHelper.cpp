@@ -166,6 +166,18 @@ namespace Brainfryer::DX12
 		return Utils::UTF::ConvertWideToUTF8(ComError { hr }.ErrorMessage());
 	}
 
+	void HRVLog(HRESULT hr)
+	{
+		if (hr == 0)
+			return;
+
+		std::string msg = HRMessage(hr);
+		if (hr < 0)
+			Log::GetOrCreateLogger("DX12")->error("{}", msg);
+		else
+			Log::GetOrCreateLogger("DX12")->info("{}", msg);
+	}
+
 	void HRVLT(HRESULT hr)
 	{
 		if (hr == 0)

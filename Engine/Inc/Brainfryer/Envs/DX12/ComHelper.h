@@ -55,6 +55,7 @@ namespace Brainfryer::DX12
 
 	constexpr bool HRValidate(HRESULT hr) { return hr >= 0; }
 	std::string    HRMessage(HRESULT hr);
+	void           HRVLog(HRESULT hr);
 	void           HRVLT(HRESULT hr);
 
 	template <class T>

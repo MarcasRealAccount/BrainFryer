@@ -10,21 +10,15 @@ namespace Brainfryer::DX12
 		auto  context = Context::Get<DX12Context>();
 		auto& handle  = allocator->handle();
 
-		if (!HRValidate(context->device()->CreateCommandList(0, DX12CommandListType(allocator->type()), handle.get(), nullptr, m_CommandList, m_CommandList)))
-			return;
-
-		if (!HRValidate(m_CommandList->Close()))
-			return;
+		HRVLT(context->device()->CreateCommandList(0, DX12CommandListType(allocator->type()), handle.get(), nullptr, m_CommandList, m_CommandList));
+		HRVLT(m_CommandList->Close());
 	}
 
 	DX12CommandList::DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device9* device)
 	    : m_Allocator(allocator)
 	{
-		if (!HRValidate(device->CreateCommandList(0, DX12CommandListType(allocator->type()), allocator->handle().get(), nullptr, m_CommandList, m_CommandList)))
-			return;
-
-		if (!HRValidate(m_CommandList->Close()))
-			return;
+		HRVLT(device->CreateCommandList(0, DX12CommandListType(allocator->type()), allocator->handle().get(), nullptr, m_CommandList, m_CommandList));
+		HRVLT(m_CommandList->Close());
 	}
 
 	DX12CommandList::DX12CommandList(DX12CommandList&& move) noexcept
@@ -39,14 +33,12 @@ namespace Brainfryer::DX12
 
 	void DX12CommandList::begin()
 	{
-		if (!HRValidate(m_CommandList->Reset(m_Allocator->handle().get(), nullptr)))
-			return;
+		HRVLT(m_CommandList->Reset(m_Allocator->handle().get(), nullptr));
 	}
 
 	void DX12CommandList::end()
 	{
-		if (!HRValidate(m_CommandList->Close()))
-			return;
+		HRVLT(m_CommandList->Close());
 	}
 
 	ECommandListType DX12CommandList::type() const

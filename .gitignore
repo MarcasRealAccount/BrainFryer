@@ -1,5 +1,6 @@
 # Output
 /Bin/
+/Editor/Run/Logs/
 
 # Visual Studio
 /.vs/

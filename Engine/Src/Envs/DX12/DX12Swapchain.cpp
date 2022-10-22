@@ -3,11 +3,14 @@
 #include "Brainfryer/Envs/DX12/DX12Context.h"
 #include "Brainfryer/Envs/Windows/Win32Window.h"
 
+#include <format>
+#include <iostream>
+
 namespace Brainfryer::DX12
 {
 	DX12Swapchain::DX12Swapchain(const SwapchainInfo& info)
 	    : m_Window(info.window),
-	      m_Images(info.bufferCount),
+	      m_WindowRect({ 0, 0, 0, 0 }),
 	      m_HeapStart({ 0 }),
 	      m_HeapIncrement(0),
 	      m_ImageIndex(0)
@@ -16,11 +19,11 @@ namespace Brainfryer::DX12
 		auto& factory      = context->factory();
 		auto& commandQueue = context->commandQueue();
 
-		auto rect = m_Window->windowRect();
+		m_WindowRect = m_Window->windowRect();
 
 		DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
-		swapchainDesc.Width  = rect.w;
-		swapchainDesc.Height = rect.h;
+		swapchainDesc.Width  = m_WindowRect.w;
+		swapchainDesc.Height = m_WindowRect.h;
 		swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapchainDesc.Stereo = false;
 
@@ -35,34 +38,35 @@ namespace Brainfryer::DX12
 		swapchainDesc.Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 		Com<IDXGISwapChain1> swapchain;
-		if (!HRValidate(factory->CreateSwapChainForHwnd(
-		        commandQueue.get(),
-		        static_cast<Windows::Win32Window*>(m_Window)->nativeHandle(),
-		        &swapchainDesc,
-		        nullptr,
-		        nullptr,
-		        swapchain)))
-			return;
+		HRVLT(factory->CreateSwapChainForHwnd(
+		    commandQueue.get(),
+		    static_cast<Windows::Win32Window*>(m_Window)->nativeHandle(),
+		    &swapchainDesc,
+		    nullptr,
+		    nullptr,
+		    swapchain));
 		m_Swapchain  = swapchain;
 		m_ImageIndex = m_Swapchain->GetCurrentBackBufferIndex();
+
+		m_Swapchain->GetDesc1(&swapchainDesc);
+		m_Images.resize(swapchainDesc.BufferCount);
 
 		auto& device = context->device();
 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc {};
 		rtvHeapDesc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		rtvHeapDesc.NumDescriptors = info.bufferCount;
+		rtvHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
 		rtvHeapDesc.NodeMask       = 0;
 		rtvHeapDesc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		if (!HRValidate(device->CreateDescriptorHeap(&rtvHeapDesc, m_DescriptorHeap, m_DescriptorHeap)))
-			return;
+		HRVLT(device->CreateDescriptorHeap(&rtvHeapDesc, m_DescriptorHeap, m_DescriptorHeap));
 
 		m_HeapStart     = m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		m_HeapIncrement = device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
 		auto handle     = m_HeapStart;
-		for (std::uint32_t i = 0; i < info.bufferCount; ++i)
+		for (std::uint32_t i = 0; i < swapchainDesc.BufferCount; ++i)
 		{
 			auto& renderTarget = m_Images[i];
-			m_Swapchain->GetBuffer(i, renderTarget, renderTarget);
+			HRVLT(m_Swapchain->GetBuffer(i, renderTarget, renderTarget));
 			device->CreateRenderTargetView(renderTarget.get(), nullptr, handle);
 			handle.ptr += m_HeapIncrement;
 		}
@@ -77,6 +81,44 @@ namespace Brainfryer::DX12
 		auto& commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
 
 		auto rect = m_Window->windowRect();
+		if (rect.w != m_WindowRect.w || rect.h != m_WindowRect.h)
+		{
+			auto context = Context::Get<DX12Context>();
+			m_Images.clear();
+			m_DescriptorHeap.release();
+
+			context->waitForGPU();
+
+			HRVLT(m_Swapchain->ResizeBuffers(0, rect.w, rect.h, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING));
+
+			m_ImageIndex = m_Swapchain->GetCurrentBackBufferIndex();
+
+			DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
+			m_Swapchain->GetDesc1(&swapchainDesc);
+			m_Images.resize(swapchainDesc.BufferCount);
+
+			auto& device = context->device();
+
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc {};
+			rtvHeapDesc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			rtvHeapDesc.NumDescriptors = swapchainDesc.BufferCount;
+			rtvHeapDesc.NodeMask       = 0;
+			rtvHeapDesc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			HRVLT(device->CreateDescriptorHeap(&rtvHeapDesc, m_DescriptorHeap, m_DescriptorHeap));
+
+			m_HeapStart     = m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			m_HeapIncrement = device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
+			auto handle     = m_HeapStart;
+			for (std::uint32_t i = 0; i < swapchainDesc.BufferCount; ++i)
+			{
+				auto& renderTarget = m_Images[i];
+				HRVLT(m_Swapchain->GetBuffer(i, renderTarget, renderTarget));
+				device->CreateRenderTargetView(renderTarget.get(), nullptr, handle);
+				handle.ptr += m_HeapIncrement;
+			}
+
+			m_WindowRect = rect;
+		}
 
 		D3D12_VIEWPORT viewport {};
 		viewport.TopLeftX = 0.0f;
@@ -134,8 +176,7 @@ namespace Brainfryer::DX12
 
 	void DX12Swapchain::present()
 	{
-		if (!HRValidate(m_Swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING)))
-			return;
+		HRVLT(m_Swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
 		m_ImageIndex = m_Swapchain->GetCurrentBackBufferIndex();
 	}
 

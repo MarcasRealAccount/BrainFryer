@@ -11,9 +11,9 @@ namespace Brainfryer
 			return nullptr;
 	}
 
-	void Window::FatalErrorBox(std::string_view message)
+	void Window::FatalErrorBox(std::string_view message, std::string_view title, const Utils::BackTrace& backTrace)
 	{
 		if constexpr (Core::s_IsSystemWindows)
-			Windows::Win32Window::FatalErrorBox(message);
+			Windows::Win32Window::FatalErrorBox(message, title, backTrace);
 	}
 } // namespace Brainfryer

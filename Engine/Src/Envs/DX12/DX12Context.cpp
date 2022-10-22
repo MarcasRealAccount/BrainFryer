@@ -13,7 +13,7 @@ namespace Brainfryer::DX12
 	{
 		UINT dxgiFactoryFlags = 0;
 
-#ifdef BUILD_IS_CONFIG_DEBUG
+		if constexpr (Core::s_IsConfigDebug)
 		{
 			Com<ID3D12Debug> debugController;
 			if (HRValidate(D3D12GetDebugInterface(debugController, debugController)))
@@ -22,10 +22,8 @@ namespace Brainfryer::DX12
 				dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 			}
 		}
-#endif
 
-		if (!HRValidate(CreateDXGIFactory2(dxgiFactoryFlags, m_Factory, m_Factory)))
-			return;
+		HRVLT(CreateDXGIFactory2(dxgiFactoryFlags, m_Factory, m_Factory));
 
 		Com<IDXGIAdapter1> hardwareAdapter;
 		for (UINT adapterIndex = 0; HRValidate(m_Factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, hardwareAdapter, hardwareAdapter)); ++adapterIndex)
@@ -62,8 +60,7 @@ namespace Brainfryer::DX12
 		if (!hardwareAdapter.valid())
 			return;
 
-		if (!HRValidate(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, m_Device, m_Device)))
-			return;
+		HRVLT(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, m_Device, m_Device));
 
 		D3D12_COMMAND_QUEUE_DESC queueDesc {};
 		queueDesc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -71,8 +68,7 @@ namespace Brainfryer::DX12
 		queueDesc.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		queueDesc.NodeMask = 0;
 
-		if (!HRValidate(m_Device->CreateCommandQueue(&queueDesc, m_CommandQueue, m_CommandQueue)))
-			return;
+		HRVLT(m_Device->CreateCommandQueue(&queueDesc, m_CommandQueue, m_CommandQueue));
 
 		m_CommandAllocators.reserve(m_FrameCount);
 		m_CommandLists.reserve(m_FrameCount);
@@ -87,8 +83,7 @@ namespace Brainfryer::DX12
 			m_CommandLists.emplace_back(&allocator, m_Device.get());
 		}
 
-		if (!HRValidate(m_Device->CreateFence(m_FrameValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, m_FrameFence, m_FrameFence)))
-			return;
+		HRVLT(m_Device->CreateFence(m_FrameValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, m_FrameFence, m_FrameFence));
 
 		m_FrameEvent = Windows::CreateEventW(nullptr, false, false, nullptr); // TODO(MarcasRealAccount): Add Windows Event name?
 		if (!m_FrameEvent)
@@ -111,11 +106,8 @@ namespace Brainfryer::DX12
 
 	void DX12Context::waitForGPU()
 	{
-		if (!HRValidate(m_CommandQueue->Signal(m_FrameFence.get(), m_FrameValues[m_FrameIndex])))
-			return;
-
-		if (!HRValidate(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent)))
-			return;
+		HRVLT(m_CommandQueue->Signal(m_FrameFence.get(), m_FrameValues[m_FrameIndex]));
+		HRVLT(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent));
 		Windows::WaitForSingleObjectEx(m_FrameEvent, Windows::INFINITE, false);
 
 		++m_FrameValues[m_FrameIndex];
@@ -126,13 +118,11 @@ namespace Brainfryer::DX12
 		m_FrameIndex = (m_FrameIndex + 1) % m_FrameCount;
 
 		std::uint64_t currentValue = m_FrameValues[m_FrameIndex];
-		if (!HRValidate(m_CommandQueue->Signal(m_FrameFence.get(), currentValue)))
-			return nullptr;
+		HRVLT(m_CommandQueue->Signal(m_FrameFence.get(), currentValue));
 
 		if (m_FrameFence->GetCompletedValue() < m_FrameValues[m_FrameIndex])
 		{
-			if (!HRValidate(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent)))
-				return nullptr;
+			HRVLT(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent));
 			Windows::WaitForSingleObjectEx(m_FrameEvent, Windows::INFINITE, false);
 		}
 

@@ -23,7 +23,9 @@ namespace Brainfryer::Windows::Types
 	using ULONG     = std::uint32_t;
 	using LONGLONG  = std::int64_t;
 	using ULONGLONG = std::uint64_t;
+	using WORD      = std::uint16_t;
 	using DWORD     = std::uint32_t;
+	using QWORD     = std::uint64_t;
 	using FLOAT     = float;
 	using DOUBLE    = double;
 	using ATOM      = std::uint32_t;
@@ -38,8 +40,8 @@ namespace Brainfryer::Windows::Types
 
 	using LPVOID  = void*;
 	using LPCVOID = const void*;
-	using LPSTR = char*;
-	using LPCSTR = const char*;
+	using LPSTR   = char*;
+	using LPCSTR  = const char*;
 	using LPWSTR  = wchar_t*;
 	using LPCWSTR = const wchar_t*;
 

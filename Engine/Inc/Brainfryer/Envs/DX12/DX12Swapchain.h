@@ -27,6 +27,7 @@ namespace Brainfryer::DX12
 
 	private:
 		Window* m_Window;
+		Rect    m_WindowRect;
 
 		Com<IDXGISwapChain4>             m_Swapchain;
 		std::vector<Com<ID3D12Resource>> m_Images;

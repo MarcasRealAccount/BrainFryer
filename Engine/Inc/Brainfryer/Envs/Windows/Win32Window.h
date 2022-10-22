@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Brainfryer/Utils/BackTrace.h"
 #include "Brainfryer/Utils/Core.h"
 #include "Brainfryer/Window/Window.h"
 #include "Win32.h"
@@ -15,7 +16,7 @@ namespace Brainfryer::Windows
 	public:
 		friend LRESULT Win32WinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
-		static void FatalErrorBox(std::string_view message);
+		static void FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 		static void HandleLastError(std::string_view functionName);
 
 	public:

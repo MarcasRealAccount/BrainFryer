@@ -5,17 +5,6 @@
 #include "Brainfryer/Utils/Core.h"
 #include "DXGIFormat.h"
 
-#if BUILD_IS_SYSTEM_WINDOWS
-#define DECLSPEC_UUID(x)  __declspec(uuid(x))
-#define DECLSPEC_NOVTABLE __declspec(novtable)
-#define MIDL_INTERFACE(x) struct DECLSPEC_UUID(x) DECLSPEC_NOVTABLE
-#else
-#define DECLSPEC_UUID(x)
-#define DECLSPEC_NOVTABLE
-#define MIDL_INTERFACE(x) struct
-#endif
-
-
 namespace Brainfryer::DX12
 {
 	using namespace Brainfryer::Windows::Types;
@@ -265,25 +254,6 @@ namespace Brainfryer::DX12
 			DXGI_SWAP_EFFECT SwapEffect;
 			UINT             Flags;
 		};
-
-		extern "C++"
-		{
-			MIDL_INTERFACE("00000000-0000-0000-C000-000000000046")
-			IUnknown
-			{
-			public:
-				virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject) = 0;
-
-				virtual ULONG AddRef()  = 0;
-				virtual ULONG Release() = 0;
-
-				template <class Q>
-				HRESULT QueryInterface(Q * *pp)
-				{
-					return QueryInterface(DX12_UUIDOF(Q), reinterpret_cast<void**>(pp));
-				}
-			};
-		}
 
 		MIDL_INTERFACE("aec22fb8-76f3-4639-9be0-28eb43a67a2e")
 		IDXGIObject : public IUnknown

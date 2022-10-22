@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Brainfryer/Utils/BackTrace.h"
 #include "Brainfryer/Utils/Core.h"
 #include "Brainfryer/Utils/Rect.h"
 
@@ -32,7 +33,7 @@ namespace Brainfryer
 	{
 	public:
 		static std::unique_ptr<Window> Create(WindowSpecification specs);
-		static void                    FatalErrorBox(std::string_view message);
+		static void                    FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 
 	public:
 		virtual ~Window() = default;

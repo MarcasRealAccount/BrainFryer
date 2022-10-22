@@ -4,11 +4,11 @@
 #include <Brainfryer/Renderer/CommandList.h>
 #include <Brainfryer/Renderer/Context.h>
 #include <Brainfryer/Renderer/Swapchain.h>
+#include <Brainfryer/Utils/Exception.h>
+#include <Brainfryer/Utils/Log.h>
 #include <Brainfryer/Window/Window.h>
 
-#include <iostream>
-
-int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+int safeMain()
 {
 	Brainfryer::WindowSpecification specs;
 	specs.title = "BrainFryer editor";
@@ -58,6 +58,24 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 		Brainfryer::Context::WaitForGPU();
 	}
 	Brainfryer::Context::Destroy();
+}
+
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+{
+	try
+	{
+		safeMain();
+	}
+	catch (const Brainfryer::Utils::Exception& exception)
+	{
+		Brainfryer::Log::GetOrCreateLogger(exception.title())->critical("{}", exception);
+		Brainfryer::Window::FatalErrorBox(exception.what(), exception.title(), exception.backTrace());
+	}
+	catch (const std::exception& exception)
+	{
+		Brainfryer::Log::Critical("{}", exception.what());
+		Brainfryer::Window::FatalErrorBox(exception.what());
+	}
 }
 
 #if BUILD_IS_SYSTEM_WINDOWS

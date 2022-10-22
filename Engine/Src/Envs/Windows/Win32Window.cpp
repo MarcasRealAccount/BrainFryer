@@ -1,6 +1,8 @@
 #include "Brainfryer/Envs/Windows/Win32Window.h"
 #include "Brainfryer/Utils/UTFConv.h"
 
+#include <spdlog/fmt/fmt.h>
+
 namespace Brainfryer::Windows
 {
 	LRESULT Win32WinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -87,32 +89,38 @@ namespace Brainfryer::Windows
 		Win32ClassRegister()
 		    : m_WndClassAtom(0)
 		{
-			WNDCLASSEXW wndClass;
-			wndClass.cbSize        = sizeof(WNDCLASSEXW);
-			wndClass.style         = CS_VREDRAW | CS_HREDRAW;
-			wndClass.lpfnWndProc   = &Win32WinProc;
-			wndClass.cbClsExtra    = 0;
-			wndClass.cbWndExtra    = 0;
-			wndClass.hInstance     = GetInstance();
-			wndClass.hIcon         = nullptr;
-			wndClass.hCursor       = LoadCursorW(nullptr, IDC_ARROW);
-			wndClass.hbrBackground = nullptr;
-			wndClass.lpszMenuName  = nullptr;
-			wndClass.lpszClassName = L"BrainFryerClass";
-			wndClass.hIconSm       = nullptr;
+			if constexpr (Core::s_IsSystemWindows)
+			{
+				WNDCLASSEXW wndClass;
+				wndClass.cbSize        = sizeof(WNDCLASSEXW);
+				wndClass.style         = CS_VREDRAW | CS_HREDRAW;
+				wndClass.lpfnWndProc   = &Win32WinProc;
+				wndClass.cbClsExtra    = 0;
+				wndClass.cbWndExtra    = 0;
+				wndClass.hInstance     = GetInstance();
+				wndClass.hIcon         = nullptr;
+				wndClass.hCursor       = LoadCursorW(nullptr, IDC_ARROW);
+				wndClass.hbrBackground = nullptr;
+				wndClass.lpszMenuName  = nullptr;
+				wndClass.lpszClassName = L"BrainFryerClass";
+				wndClass.hIconSm       = nullptr;
 
-			m_WndClassAtom = RegisterClassExW(&wndClass);
-			if (!m_WndClassAtom)
-				Win32Window::HandleLastError("RegisterClassExW");
+				m_WndClassAtom = RegisterClassExW(&wndClass);
+				if (!m_WndClassAtom)
+					Win32Window::HandleLastError("RegisterClassExW");
+			}
 		}
 
 		~Win32ClassRegister()
 		{
-			if (!m_WndClassAtom)
-				return;
+			if constexpr (Core::s_IsSystemWindows)
+			{
+				if (!m_WndClassAtom)
+					return;
 
-			if (!UnregisterClassW(L"BrainFryerClass", GetInstance()))
-				Win32Window::HandleLastError("UnregisterClassExW");
+				if (!UnregisterClassW(L"BrainFryerClass", GetInstance()))
+					Win32Window::HandleLastError("UnregisterClassExW");
+			}
 		}
 
 		bool isRegistered() const { return !!m_WndClassAtom; }
@@ -120,10 +128,19 @@ namespace Brainfryer::Windows
 		ATOM m_WndClassAtom;
 	} s_ClassRegister;
 
-	void Win32Window::FatalErrorBox(std::string_view message)
+	void Win32Window::FatalErrorBox(std::string_view message, std::string_view title, const Utils::BackTrace& backTrace)
 	{
-		std::wstring msg = Utils::UTF::ConvertUTF8ToWide(message);
-		MessageBoxW(nullptr, msg.c_str(), L"Brain was completely fried", MB_OK);
+		std::wstring msg     = backTrace.frames().empty() ? Utils::UTF::ConvertUTF8ToWide(message) : Utils::UTF::ConvertUTF8ToWide(fmt::format("{}\n\n{}", message, backTrace));
+		std::wstring caption = L"Brain was completely fried";
+		if (!title.empty())
+		{
+			caption += L" by ";
+			std::size_t start = caption.size();
+			caption.resize(caption.size() + Utils::UTF::UTF8ToUTF16RequiredLength(title.data(), title.size()));
+			std::size_t offset = 0;
+			Utils::UTF::ConvertUTF8ToUTF16(title.data(), title.size(), caption.data() + start, caption.size() - start, offset);
+		}
+		MessageBoxW(nullptr, msg.c_str(), caption.c_str(), MB_OK);
 	}
 
 	void Win32Window::HandleLastError(std::string_view functionName)

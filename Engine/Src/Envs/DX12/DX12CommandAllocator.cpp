@@ -8,19 +8,18 @@ namespace Brainfryer::DX12
 	    : m_Type(info.type)
 	{
 		auto context = Context::Get<DX12Context>();
-		if (!HRValidate(context->device()->CreateCommandAllocator(DX12CommandListType(m_Type), m_Allocator, m_Allocator)))
-			return;
+		HRVLT(context->device()->CreateCommandAllocator(DX12CommandListType(m_Type), m_Allocator, m_Allocator));
 	}
 
 	DX12CommandAllocator::DX12CommandAllocator(ID3D12Device9* device, ECommandListType type)
 	    : m_Type(type)
 	{
-		if (!HRValidate(device->CreateCommandAllocator(DX12CommandListType(m_Type), m_Allocator, m_Allocator)))
-			return;
+		HRVLT(device->CreateCommandAllocator(DX12CommandListType(m_Type), m_Allocator, m_Allocator));
 	}
 
 	DX12CommandAllocator::DX12CommandAllocator(DX12CommandAllocator&& move) noexcept
-	    : m_Allocator(std::move(move.m_Allocator))
+	    : m_Type(move.m_Type),
+	      m_Allocator(std::move(move.m_Allocator))
 	{
 	}
 
@@ -30,8 +29,7 @@ namespace Brainfryer::DX12
 
 	void DX12CommandAllocator::reset()
 	{
-		if (!HRValidate(m_Allocator->Reset()))
-			return;
+		HRVLT(m_Allocator->Reset());
 	}
 
 	std::vector<std::unique_ptr<CommandList>> DX12CommandAllocator::allocate(std::size_t numCommandLists)

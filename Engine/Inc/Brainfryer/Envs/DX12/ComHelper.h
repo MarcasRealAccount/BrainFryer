@@ -2,6 +2,7 @@
 
 #include "Brainfryer/Envs/Windows/Types.h"
 #include "Brainfryer/Utils/Core.h"
+#include "Brainfryer/Utils/Exception.h"
 
 #include <concepts>
 
@@ -26,14 +27,35 @@ using GUID = struct _GUID
 };
 #define GUID_DEFINED
 
+#if BUILD_IS_SYSTEM_WINDOWS
+#define DECLSPEC_UUID(x)  __declspec(uuid(x))
+#define DECLSPEC_NOVTABLE __declspec(novtable)
+#define MIDL_INTERFACE(x) struct DECLSPEC_UUID(x) DECLSPEC_NOVTABLE
+#else
+#define DECLSPEC_UUID(x)
+#define DECLSPEC_NOVTABLE
+#define MIDL_INTERFACE(x) struct
+#endif
+
 namespace Brainfryer::DX12
 {
 	using namespace Brainfryer::Windows::Types;
 
 	using HRESULT = std::int32_t;
 
+	static constexpr std::uint32_t SEVERITY_SUCCESS = 0;
+	static constexpr std::uint32_t SEVERITY_ERROR   = 1;
+
+	static constexpr std::uint32_t FACILITY_ITF = 4;
+
+	static constexpr HRESULT MAKE_HRESULT(std::uint32_t sev, std::uint32_t fac, std::uint32_t code)
+	{
+		return static_cast<HRESULT>(sev << 31 | fac << 16 | code);
+	}
+
 	constexpr bool HRValidate(HRESULT hr) { return hr >= 0; }
 	std::string    HRMessage(HRESULT hr);
+	void           HRVLT(HRESULT hr);
 
 	template <class T>
 	concept ComInterface = requires(T* t) {
@@ -133,4 +155,38 @@ namespace Brainfryer::DX12
 	private:
 		T* m_Ptr;
 	};
+
+	MIDL_INTERFACE("00000000-0000-0000-C000-000000000046")
+	IUnknown
+	{
+	public:
+		virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject) = 0;
+
+		virtual ULONG AddRef()  = 0;
+		virtual ULONG Release() = 0;
+
+		template <class Q>
+		HRESULT QueryInterface(Q * *pp)
+		{
+			return QueryInterface(DX12_UUIDOF(Q), reinterpret_cast<void**>(pp));
+		}
+	};
+
+	extern "C"
+	{
+		MIDL_INTERFACE("1CF2B120-547D-101B-8E65-08002B2BD119")
+		IErrorInfo : public IUnknown
+		{
+		public:
+			virtual HRESULT GetGUID(GUID * pGUID) = 0;
+
+			virtual HRESULT GetSource(wchar_t * *pBstrSource) = 0;
+
+			virtual HRESULT GetDescription(wchar_t * *pBstrDescription) = 0;
+
+			virtual HRESULT GetHelpFile(wchar_t * *pBstrHelpFile) = 0;
+
+			virtual HRESULT GetHelpContext(DWORD * pdwHelpContext) = 0;
+		};
+	}
 } // namespace Brainfryer::DX12

@@ -15,6 +15,9 @@ namespace Brainfryer::DX12
 	public:
 		static constexpr EContextAPI API = EContextAPI::DX12;
 
+	private:
+		static void DebugMessageCallback(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void* pContext);
+
 	public:
 		DX12Context();
 		~DX12Context();
@@ -40,6 +43,8 @@ namespace Brainfryer::DX12
 	private:
 		Com<IDXGIFactory7>      m_Factory;
 		Com<ID3D12Device9>      m_Device;
+		Com<ID3D12InfoQueue1>   m_InfoQueue;
+		std::uint32_t           m_DMCCookie;
 		Com<ID3D12CommandQueue> m_CommandQueue;
 
 		std::vector<DX12CommandAllocator> m_CommandAllocators;

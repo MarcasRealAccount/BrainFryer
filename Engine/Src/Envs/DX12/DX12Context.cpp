@@ -3,9 +3,33 @@
 #include "Brainfryer/Envs/DX12/DX12CommandList.h"
 #include "Brainfryer/Envs/Windows/Win32.h"
 #include "Brainfryer/Utils/Core.h"
+#include "Brainfryer/Utils/Log.h"
 
 namespace Brainfryer::DX12
 {
+	void DX12Context::DebugMessageCallback(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void* pContext)
+	{
+		auto logger = Log::GetOrCreateLogger("DX12");
+		switch (severity)
+		{
+		case D3D12_MESSAGE_SEVERITY_MESSAGE:
+			logger->info("{}", description);
+			break;
+		case D3D12_MESSAGE_SEVERITY_INFO:
+			logger->debug("{}", description);
+			break;
+		case D3D12_MESSAGE_SEVERITY_WARNING:
+			logger->warn("{}", description);
+			break;
+		case D3D12_MESSAGE_SEVERITY_ERROR:
+			logger->error("{}", description);
+			break;
+		case D3D12_MESSAGE_SEVERITY_CORRUPTION:
+			logger->critical("{}", description);
+			break;
+		}
+	}
+
 	DX12Context::DX12Context()
 	    : m_FrameIndex(1),
 	      m_FrameEvent(nullptr),
@@ -61,6 +85,10 @@ namespace Brainfryer::DX12
 			return;
 
 		HRVLT(D3D12CreateDevice(hardwareAdapter.get(), D3D_FEATURE_LEVEL_12_2, m_Device, m_Device));
+
+		if constexpr (Core::s_IsConfigDebug)
+			if (HRValidate(m_Device->QueryInterface(m_InfoQueue, m_InfoQueue)))
+				m_InfoQueue->RegisterMessageCallback(&DebugMessageCallback, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, &m_DMCCookie);
 
 		D3D12_COMMAND_QUEUE_DESC queueDesc {};
 		queueDesc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;

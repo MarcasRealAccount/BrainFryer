@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Brainfryer/Utils/Flags.h"
 #include "BufferView.h"
 
 #include <memory>
@@ -14,17 +15,19 @@ namespace Brainfryer
 		Upload
 	};
 
-	enum class EBufferState
+	using EBufferState = Utils::Flags<>;
+
+	namespace BufferState
 	{
-		Common                 = 0x000,
-		VertexAndConstant      = 0x001,
-		Index                  = 0x002,
-		UnorderedAccess        = 0x008,
-		NonPixelShaderResource = 0x040,
-		IndirectArgument       = 0x200,
-		CopyDst                = 0x400,
-		CopySrc                = 0x800
-	};
+		static constexpr EBufferState Common                 = 0x000;
+		static constexpr EBufferState VertexAndConstant      = 0x001;
+		static constexpr EBufferState Index                  = 0x002;
+		static constexpr EBufferState UnorderedAccess        = 0x008;
+		static constexpr EBufferState NonPixelShaderResource = 0x040;
+		static constexpr EBufferState IndirectArgument       = 0x200;
+		static constexpr EBufferState CopyDst                = 0x400;
+		static constexpr EBufferState CopySrc                = 0x800;
+	}; // namespace BufferState
 
 	struct BufferInfo
 	{

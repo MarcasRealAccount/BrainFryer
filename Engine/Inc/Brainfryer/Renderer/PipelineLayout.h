@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Brainfryer/Utils/Flags.h"
 #include "ComparisonFunc.h"
 #include "Filter.h"
 #include "ImageAddressMode.h"
@@ -10,11 +11,22 @@
 
 namespace Brainfryer
 {
-	enum class EPipelineLayoutFlags
+	using EPipelineLayoutFlags                = Utils::Flags<>;
+	using EPipelineLayoutDescriptorRangeFlags = Utils::Flags<>;
+
+	namespace PipelineLayoutFlags
 	{
-		None                           = 0x0,
-		AllowInputAssemblerInputLayout = 0x1
-	};
+		static constexpr EPipelineLayoutFlags None                           = 0x0;
+		static constexpr EPipelineLayoutFlags AllowInputAssemblerInputLayout = 0x1;
+	}; // namespace PipelineLayoutFlags
+
+	namespace PipelineLayoutDescriptorRangeFlags
+	{
+		static constexpr EPipelineLayoutDescriptorRangeFlags None                = 0x0;
+		static constexpr EPipelineLayoutDescriptorRangeFlags DescriptorsVolatile = 0x1;
+		static constexpr EPipelineLayoutDescriptorRangeFlags DataVolatile        = 0x2;
+		static constexpr EPipelineLayoutDescriptorRangeFlags DataStatic          = 0x8;
+	}; // namespace PipelineLayoutDescriptorRangeFlags
 
 	enum class EPipelineLayoutParameterType
 	{
@@ -31,14 +43,6 @@ namespace Brainfryer
 		UniformView,
 		ConstantBuffer,
 		Sampler
-	};
-
-	enum class EPipelineLayoutDescriptorRangeFlags
-	{
-		None                = 0x0,
-		DescriptorsVolatile = 0x1,
-		DataVolatile        = 0x2,
-		DataStatic          = 0x8
 	};
 
 	enum class EShaderVisibility

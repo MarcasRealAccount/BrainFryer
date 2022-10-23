@@ -1,28 +1,32 @@
 #pragma once
 
+#include <cstdint>
+
 #include <ostream>
 #include <utility>
 
 namespace Brainfryer::Utils
 {
-	template <class T>
+	template <class T = std::uint32_t, T D = T { 0 }>
 	struct Flags
 	{
 	public:
 		using ValueT = T;
 
 	public:
+		constexpr Flags()
+		    : m_Value(D) {}
 		constexpr Flags(const ValueT& value)
 		    : m_Value(value) {}
 		constexpr Flags(ValueT&& value)
 		    : m_Value(std::move(value)) {}
-		template <class U>
-		constexpr Flags(const Flags<U>& flags)
+		template <class U, T E>
+		constexpr Flags(const Flags<U, E>& flags)
 		    : m_Value(flags.m_Value)
 		{
 		}
-		template <class U>
-		constexpr Flags(Flags<U>&& flags)
+		template <class U, T E>
+		constexpr Flags(Flags<U, E>&& flags)
 		    : m_Value(std::move(flags.m_Value))
 		{
 		}
@@ -37,14 +41,14 @@ namespace Brainfryer::Utils
 			m_Value = std::move(value);
 			return *this;
 		}
-		template <class U>
-		constexpr Flags& operator=(const Flags<U>& flags)
+		template <class U, T E>
+		constexpr Flags& operator=(const Flags<U, E>& flags)
 		{
 			m_Value = flags.m_Value;
 			return *this;
 		}
-		template <class U>
-		constexpr Flags& operator=(Flags<U>&& flags)
+		template <class U, T E>
+		constexpr Flags& operator=(Flags<U, E>&& flags)
 		{
 			m_Value = std::move(flags.m_Value);
 			return *this;
@@ -54,131 +58,127 @@ namespace Brainfryer::Utils
 		constexpr ValueT& getValue() { return m_Value; }
 
 		friend constexpr Flags operator~(const Flags& flags) { return ~flags.m_Value; }
-		template <class U>
-		friend constexpr bool operator==(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator==(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value == rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr bool operator!=(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator!=(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value != rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr bool operator<(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator<(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value < rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr bool operator<=(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator<=(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value <= rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr bool operator>(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator>(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value > rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr bool operator>=(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr bool operator>=(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value >= rhs.m_Value;
 		}
-		template <class U>
-		friend constexpr Flags operator&(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator&(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value & rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator&=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator&=(const Flags<U, E>& rhs)
 		{
 			m_Value &= rhs.m_Value;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator|(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator|(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value | rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator|=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator|=(const Flags<U, E>& rhs)
 		{
 			m_Value |= rhs.m_Value;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator^(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator^(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value ^ rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator^=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator^=(const Flags<U, E>& rhs)
 		{
 			m_Value ^= rhs.m_Value;
 			return *this;
 		}
-		template <class U>
 		friend constexpr Flags operator<<(const Flags& lhs, std::size_t count)
 		{
 			return lhs.m_Value << count;
 		}
-		template <class U>
 		constexpr Flags& operator<<=(std::size_t count)
 		{
 			m_Value <<= count;
 			return *this;
 		}
-		template <class U>
 		friend constexpr Flags operator>>(const Flags& lhs, std::size_t count)
 		{
 			return lhs.m_Value >> count;
 		}
-		template <class U>
 		constexpr Flags& operator>>=(std::size_t count)
 		{
 			m_Value >>= count;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator-(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator-(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value - rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator-=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator-=(const Flags<U, E>& rhs)
 		{
 			m_Value -= rhs.m_Value;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator+(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator+(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value + rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator+=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator+=(const Flags<U, E>& rhs)
 		{
 			m_Value += rhs.m_Value;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator*(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator*(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value * rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator*=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator*=(const Flags<U, E>& rhs)
 		{
 			m_Value *= rhs.m_Value;
 			return *this;
 		}
-		template <class U>
-		friend constexpr Flags operator/(const Flags& lhs, const Flags<U>& rhs)
+		template <class U, T E>
+		friend constexpr Flags operator/(const Flags& lhs, const Flags<U, E>& rhs)
 		{
 			return lhs.m_Value / rhs.m_Value;
 		}
-		template <class U>
-		constexpr Flags& operator/=(const Flags<U>& rhs)
+		template <class U, T E>
+		constexpr Flags& operator/=(const Flags<U, E>& rhs)
 		{
 			m_Value /= rhs.m_Value;
 			return *this;
@@ -189,4 +189,4 @@ namespace Brainfryer::Utils
 	public:
 		ValueT m_Value;
 	};
-} // namespace Utils
+} // namespace Brainfryer::Utils

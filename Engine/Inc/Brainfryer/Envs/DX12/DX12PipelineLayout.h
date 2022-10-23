@@ -7,10 +7,18 @@ namespace Brainfryer::DX12
 {
 	constexpr D3D12_ROOT_SIGNATURE_FLAGS DX12PipelineLayoutFlags(EPipelineLayoutFlags flags)
 	{
-		std::uint32_t flg = static_cast<std::uint32_t>(flags);
 		std::uint32_t out = 0;
-		if (flg & static_cast<std::uint32_t>(EPipelineLayoutFlags::AllowInputAssemblerInputLayout)) out |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+		if (flags & PipelineLayoutFlags::AllowInputAssemblerInputLayout) out |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 		return static_cast<D3D12_ROOT_SIGNATURE_FLAGS>(out);
+	}
+
+	constexpr D3D12_DESCRIPTOR_RANGE_FLAGS DX12PipelineLayoutDescriptorRangeFlags(EPipelineLayoutDescriptorRangeFlags flags)
+	{
+		std::uint32_t out = 0;
+		if (flags & PipelineLayoutDescriptorRangeFlags::DescriptorsVolatile) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+		if (flags & PipelineLayoutDescriptorRangeFlags::DataVolatile) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+		if (flags & PipelineLayoutDescriptorRangeFlags::DataStatic) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+		return static_cast<D3D12_DESCRIPTOR_RANGE_FLAGS>(out);
 	}
 
 	constexpr D3D12_ROOT_PARAMETER_TYPE DX12PipelineLayoutParameterType(EPipelineLayoutParameterType type)
@@ -36,16 +44,6 @@ namespace Brainfryer::DX12
 		case EPipelineLayoutDescriptorRangeType::Sampler: return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
 		}
 		return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	}
-
-	constexpr D3D12_DESCRIPTOR_RANGE_FLAGS DX12PipelineLayoutDescriptorRangeFlags(EPipelineLayoutDescriptorRangeFlags flags)
-	{
-		std::uint32_t flg = static_cast<std::uint32_t>(flags);
-		std::uint32_t out = 0;
-		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DescriptorsVolatile)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
-		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DataVolatile)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
-		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DataStatic)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
-		return static_cast<D3D12_DESCRIPTOR_RANGE_FLAGS>(out);
 	}
 
 	constexpr D3D12_SHADER_VISIBILITY DX12ShaderVisibility(EShaderVisibility visibility)

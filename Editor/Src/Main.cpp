@@ -6,6 +6,7 @@
 #include <Brainfryer/Renderer/CommandList.h>
 #include <Brainfryer/Renderer/Context.h>
 #include <Brainfryer/Renderer/GraphicsPipeline.h>
+#include <Brainfryer/Renderer/Image.h>
 #include <Brainfryer/Renderer/PipelineLayout.h>
 #include <Brainfryer/Renderer/Swapchain.h>
 #include <Brainfryer/Utils/Exception.h>
@@ -42,8 +43,24 @@ int safeMain()
 		std::unique_ptr<Brainfryer::PipelineLayout> graphicsPipelineLayout;
 		{
 			Brainfryer::PipelineLayoutInfo pipelineLayoutInfo {};
-			pipelineLayoutInfo.flags = Brainfryer::EPipelineLayoutFlags::AllowInputAssemblerInputLayout;
-			graphicsPipelineLayout   = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
+			pipelineLayoutInfo.flags = Brainfryer::PipelineLayoutFlags::AllowInputAssemblerInputLayout;
+			pipelineLayoutInfo.parameters.emplace_back(Brainfryer::PipelineLayoutDescriptorTable { { { Brainfryer::EPipelineLayoutDescriptorRangeType::ShaderResourceView, 1, 0, 0, 0, Brainfryer::PipelineLayoutDescriptorRangeFlags::DataStatic } } }, Brainfryer::EShaderVisibility::Pixel);
+			pipelineLayoutInfo.staticSamplers.emplace_back(
+			    Brainfryer::EFilter::Nearest,
+			    Brainfryer::EFilter::Nearest,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    0.0f,
+			    0,
+			    Brainfryer::EComparisonFunc::Never,
+			    Brainfryer::EBorderColor::TransparentBlack,
+			    0.0f,
+			    1.0f,
+			    0,
+			    0,
+			    Brainfryer::EShaderVisibility::Pixel);
+			graphicsPipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
 		}
 		if (!graphicsPipelineLayout->initialized())
 			return 4;
@@ -100,6 +117,8 @@ int safeMain()
 		std::unique_ptr<Brainfryer::Buffer> stagingVertexBuffer;
 		std::unique_ptr<Brainfryer::Buffer> indexBuffer;
 		std::unique_ptr<Brainfryer::Buffer> stagingIndexBuffer;
+		std::unique_ptr<Brainfryer::Image>  image;
+		std::unique_ptr<Brainfryer::Buffer> stagingImageBuffer;
 		Brainfryer::VertexBufferView        vertexBufferView {};
 		Brainfryer::IndexBufferView         indexBufferView {};
 		{
@@ -116,7 +135,7 @@ int safeMain()
 			{
 				Brainfryer::BufferInfo bufferInfo {};
 				bufferInfo.heapType     = Brainfryer::EHeapType::Default;
-				bufferInfo.initialState = Brainfryer::EBufferState::CopyDst;
+				bufferInfo.initialState = Brainfryer::BufferState::CopyDst;
 				bufferInfo.alignment    = 0;
 				bufferInfo.size         = sizeof(triangleVertices);
 
@@ -135,13 +154,13 @@ int safeMain()
 				stagingVertexBuffer->unmap();
 
 				vertexBuffer->copyFrom(loadCommandList.get(), { stagingVertexBuffer.get(), 0, sizeof(triangleVertices) });
-				vertexBuffer->transition(loadCommandList.get(), Brainfryer::EBufferState::VertexAndConstant);
+				vertexBuffer->transition(loadCommandList.get(), Brainfryer::BufferState::VertexAndConstant);
 			}
 
 			{
 				Brainfryer::BufferInfo bufferInfo {};
 				bufferInfo.heapType     = Brainfryer::EHeapType::Default;
-				bufferInfo.initialState = Brainfryer::EBufferState::CopyDst;
+				bufferInfo.initialState = Brainfryer::BufferState::CopyDst;
 				bufferInfo.alignment    = 0;
 				bufferInfo.size         = sizeof(triangleIndices);
 
@@ -160,7 +179,45 @@ int safeMain()
 				stagingIndexBuffer->unmap();
 
 				indexBuffer->copyFrom(loadCommandList.get(), { stagingIndexBuffer.get(), 0, sizeof(triangleIndices) });
-				indexBuffer->transition(loadCommandList.get(), Brainfryer::EBufferState::Index);
+				indexBuffer->transition(loadCommandList.get(), Brainfryer::BufferState::Index);
+			}
+
+			{
+				std::uint8_t imageData[] {
+					0x00, 0x00, 0x00, 0xFF,
+					0xFF, 0xFF, 0xFF, 0xFF,
+					0x00, 0x00, 0x00, 0xFF,
+					0xFF, 0xFF, 0xFF, 0xFF
+				};
+
+				Brainfryer::ImageInfo imageInfo {};
+				imageInfo.type         = Brainfryer::EImageType::_2D;
+				imageInfo.format       = Brainfryer::EFormat::R8G8B8A8_UNORM;
+				imageInfo.initialState = Brainfryer::ImageState::CopyDst;
+				imageInfo.width        = 2;
+				imageInfo.height       = 2;
+				imageInfo.depth        = 1;
+				imageInfo.flags        = Brainfryer::ImageFlags::None;
+
+				image = Brainfryer::Image::Create(imageInfo);
+				if (!image->initialized())
+					return 9;
+
+				Brainfryer::BufferInfo bufferInfo {};
+				bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				bufferInfo.alignment = 0;
+				bufferInfo.size      = image->requiredBufferSize();
+
+				stagingImageBuffer = Brainfryer::Buffer::Create(bufferInfo);
+				if (!stagingImageBuffer->initialized())
+					return 9;
+
+				void* memory = stagingImageBuffer->map();
+				std::memcpy(memory, imageData, sizeof(imageData));
+				stagingImageBuffer->unmap();
+
+				image->copyFrom(loadCommandList.get(), { stagingImageBuffer.get(), 2, Brainfryer::EFormat::R8G8B8A8_UNORM, 2, 1, 1, 256 });
+				image->transition(loadCommandList.get(), Brainfryer::ImageState::PixelShaderResource);
 			}
 
 			vertexBufferView.buffer = vertexBuffer.get();
@@ -232,10 +289,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
 #if BUILD_IS_SYSTEM_WINDOWS
 
-#undef APIENTRY
-#include <Windows.h>
+#include <Brainfryer/Envs/Windows/Win32.h>
 
-int WinMain([[maybe_unused]] _In_ HINSTANCE hInstance, [[maybe_unused]] _In_opt_ HINSTANCE hPrevInstance, [[maybe_unused]] _In_ LPSTR lpszCmdLine, [[maybe_unused]] _In_ int nCmdShow)
+int WinMain([[maybe_unused]] Brainfryer::Windows::HINSTANCE hInstance,
+            [[maybe_unused]] Brainfryer::Windows::HINSTANCE hPrevInstance,
+            [[maybe_unused]] Brainfryer::Windows::LPSTR     lpszCmdLine,
+            [[maybe_unused]] int                            nCmdShow)
 {
 	return main(__argc, __argv);
 }

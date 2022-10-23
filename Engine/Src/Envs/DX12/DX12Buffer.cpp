@@ -6,7 +6,7 @@ namespace Brainfryer::DX12
 {
 	DX12Buffer::DX12Buffer(const BufferInfo& info)
 	    : m_HeapType(info.heapType),
-	      m_State(info.heapType == EHeapType::Upload ? EBufferState::Common : info.initialState)
+	      m_State(info.heapType == EHeapType::Upload ? BufferState::Common : info.initialState)
 	{
 		auto context = Context::Get<DX12Context>();
 
@@ -38,7 +38,7 @@ namespace Brainfryer::DX12
 		    &heapProperties,
 		    D3D12_HEAP_FLAG_NONE,
 		    &desc,
-		    m_HeapType == EHeapType::Upload ? D3D12_RESOURCE_STATE_GENERIC_READ : DX12BufferState(m_State),
+		    m_HeapType == EHeapType::Upload ? D3D12_RESOURCE_STATE_GENERIC_READ : DX12BufferState(m_State & ~(BufferState::CopySrc | BufferState::CopyDst)),
 		    nullptr,
 		    nullptr,
 		    m_Resource, m_Resource));

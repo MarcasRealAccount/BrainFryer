@@ -27,7 +27,7 @@ namespace Brainfryer::DX12
 		heapProperties.VisibleNodeMask      = 0;
 
 		D3D12_RESOURCE_DESC1 desc {};
-		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Dimension = DX12ImageType(m_Type);
 		desc.Alignment = info.alignment;
 		switch (info.type)
 		{
@@ -62,7 +62,7 @@ namespace Brainfryer::DX12
 		desc.Format             = DX12Format(m_Format);
 		desc.SampleDesc.Count   = 1;
 		desc.SampleDesc.Quality = 0;
-		desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.Layout             = D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE;
 		desc.Flags              = DX12ImageFlags(m_Flags);
 
 		desc.SamplerFeedbackMipRegion.Width  = 0;
@@ -73,7 +73,7 @@ namespace Brainfryer::DX12
 		    &heapProperties,
 		    D3D12_HEAP_FLAG_NONE,
 		    &desc,
-		    DX12ImageState(m_State),
+		    DX12ImageState(m_State & ~(ImageState::CopySrc | ImageState::CopyDst)),
 		    nullptr,
 		    nullptr,
 		    m_Resource, m_Resource));
@@ -102,15 +102,19 @@ namespace Brainfryer::DX12
 
 		src.PlacedFootprint.Offset = bufferView.offset;
 
+		bool      hasSrcBox = bufferRect.x >= 0 && bufferRect.y >= 0 && bufferRect.z >= 0;
 		D3D12_BOX srcBox {};
-		srcBox.left   = bufferRect.x;
-		srcBox.top    = bufferRect.y;
-		srcBox.front  = bufferRect.z;
-		srcBox.right  = bufferRect.x + bufferRect.w;
-		srcBox.bottom = bufferRect.y + bufferRect.h;
-		srcBox.back   = bufferRect.z + bufferRect.d;
+		if (hasSrcBox)
+		{
+			srcBox.left   = bufferRect.x;
+			srcBox.top    = bufferRect.y;
+			srcBox.front  = bufferRect.z;
+			srcBox.right  = bufferRect.x + bufferRect.w;
+			srcBox.bottom = bufferRect.y + bufferRect.h;
+			srcBox.back   = bufferRect.z + bufferRect.d;
+		}
 
-		static_cast<DX12CommandList*>(commandList)->handle()->CopyTextureRegion(&dst, destOffset.x, destOffset.y, destOffset.z, &src, &srcBox);
+		static_cast<DX12CommandList*>(commandList)->handle()->CopyTextureRegion(&dst, destOffset.x, destOffset.y, destOffset.z, &src, hasSrcBox ? &srcBox : nullptr);
 	}
 
 	void DX12Image::transition(CommandList* commandList, EImageState state)

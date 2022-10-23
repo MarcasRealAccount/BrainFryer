@@ -30,8 +30,10 @@ namespace Brainfryer
 
 		virtual void setPrimitiveTopology(EPrimitiveTopology topology)                                        = 0;
 		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) = 0;
+		virtual void setIndexBuffer(IndexBufferView indexBuffer)                                              = 0;
 
-		virtual void drawInstanced(std::uint32_t vertexCount, std::uint32_t instanceCount, std::uint32_t startVertex, std::uint32_t startInstance) = 0;
+		virtual void drawInstanced(std::uint32_t vertexCount, std::uint32_t instanceCount, std::uint32_t startVertex, std::uint32_t startInstance)                                 = 0;
+		virtual void drawIndexedInstanced(std::uint32_t indexCount, std::uint32_t instanceCount, std::uint32_t startIndex, std::uint32_t startVertex, std::uint32_t startInstance) = 0;
 
 		virtual ECommandListType type() const = 0;
 	};

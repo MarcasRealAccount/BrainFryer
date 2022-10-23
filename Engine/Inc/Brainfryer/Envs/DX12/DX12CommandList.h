@@ -35,7 +35,10 @@ namespace Brainfryer::DX12
 
 		virtual void setPrimitiveTopology(EPrimitiveTopology topology) override;
 		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) override;
+		virtual void setIndexBuffer(IndexBufferView indexBuffer) override;
+
 		virtual void drawInstanced(std::uint32_t vertexCount, std::uint32_t instanceCount, std::uint32_t startVertex, std::uint32_t startInstance) override;
+		virtual void drawIndexedInstanced(std::uint32_t indexCount, std::uint32_t instanceCount, std::uint32_t startIndex, std::uint32_t startVertex, std::uint32_t startInstance) override;
 
 		virtual ECommandListType type() const override;
 

@@ -81,8 +81,10 @@ int safeMain()
 		if (!graphicsPipeline->initialized())
 			return 5;
 
-		std::unique_ptr<Brainfryer::Buffer> buffer;
+		std::unique_ptr<Brainfryer::Buffer> vertexBuffer;
+		std::unique_ptr<Brainfryer::Buffer> indexBuffer;
 		Brainfryer::VertexBufferView        vertexBufferView {};
+		Brainfryer::IndexBufferView         indexBufferView {};
 		{
 			float triangleVertices[] {
 				0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -90,23 +92,49 @@ int safeMain()
 				-0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
 			};
 
-			Brainfryer::BufferInfo bufferInfo {};
-			bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
-			bufferInfo.alignment = 0;
-			bufferInfo.size      = sizeof(triangleVertices);
+			std::uint32_t indices[] {
+				0, 1, 2
+			};
 
-			buffer = Brainfryer::Buffer::Create(bufferInfo);
-			if (!buffer->initialized())
+			{
+				Brainfryer::BufferInfo bufferInfo {};
+				bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				bufferInfo.alignment = 0;
+				bufferInfo.size      = sizeof(triangleVertices);
+
+				vertexBuffer = Brainfryer::Buffer::Create(bufferInfo);
+			}
+			if (!vertexBuffer->initialized())
 				return 6;
 
-			void* memory = buffer->map();
-			std::memcpy(memory, triangleVertices, sizeof(triangleVertices));
-			buffer->unmap();
+			{
+				Brainfryer::BufferInfo bufferInfo {};
+				bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				bufferInfo.alignment = 0;
+				bufferInfo.size      = sizeof(indices);
 
-			vertexBufferView.buffer = buffer.get();
+				indexBuffer = Brainfryer::Buffer::Create(bufferInfo);
+			}
+			if (!indexBuffer->initialized())
+				return 7;
+
+			void* memory = vertexBuffer->map();
+			std::memcpy(memory, triangleVertices, sizeof(triangleVertices));
+			vertexBuffer->unmap();
+
+			vertexBufferView.buffer = vertexBuffer.get();
 			vertexBufferView.offset = 0;
 			vertexBufferView.size   = sizeof(triangleVertices);
 			vertexBufferView.stride = 28;
+
+			memory = indexBuffer->map();
+			std::memcpy(memory, indices, sizeof(indices));
+			indexBuffer->unmap();
+
+			indexBufferView.buffer = indexBuffer.get();
+			indexBufferView.offset = 0;
+			indexBufferView.size   = sizeof(indices);
+			indexBufferView.format = Brainfryer::EFormat::R32_UINT;
 		}
 
 		Brainfryer::Context::WaitForGPU();
@@ -122,7 +150,8 @@ int safeMain()
 
 			commandList->setPrimitiveTopology(Brainfryer::EPrimitiveTopology::Triangles);
 			commandList->setVertexBuffers(0, { vertexBufferView });
-			commandList->drawInstanced(3, 1, 0, 0);
+			commandList->setIndexBuffer(indexBufferView);
+			commandList->drawIndexedInstanced(3, 1, 0, 0, 0);
 
 			swapchain->unbind(commandList);
 

@@ -2,6 +2,7 @@
 #include "Brainfryer/Envs/DX12/DX12Buffer.h"
 #include "Brainfryer/Envs/DX12/DX12CommandAllocator.h"
 #include "Brainfryer/Envs/DX12/DX12Context.h"
+#include "Brainfryer/Envs/DX12/DX12Format.h"
 #include "Brainfryer/Envs/DX12/DX12GraphicsPipeline.h"
 #include "Brainfryer/Envs/DX12/DX12PrimitiveTopology.h"
 
@@ -59,19 +60,30 @@ namespace Brainfryer::DX12
 			auto& buffer = buffers[i];
 			auto& view   = views[i];
 
-			auto addr = static_cast<DX12Buffer*>(buffer.buffer)->handle()->GetGPUVirtualAddress();
-			addr += buffer.offset;
-
-			view.BufferLocation = addr;
+			view.BufferLocation = static_cast<DX12Buffer*>(buffer.buffer)->handle()->GetGPUVirtualAddress() + buffer.offset;
 			view.SizeInBytes    = buffer.size;
 			view.StrideInBytes  = buffer.stride;
 		}
 		m_CommandList->IASetVertexBuffers(startIndex, static_cast<UINT>(views.size()), views.data());
 	}
 
+	void DX12CommandList::setIndexBuffer(IndexBufferView indexBuffer)
+	{
+		D3D12_INDEX_BUFFER_VIEW view {};
+		view.BufferLocation = static_cast<DX12Buffer*>(indexBuffer.buffer)->handle()->GetGPUVirtualAddress() + indexBuffer.offset;
+		view.SizeInBytes    = indexBuffer.size;
+		view.Format         = DX12Format(indexBuffer.format);
+		m_CommandList->IASetIndexBuffer(&view);
+	}
+
 	void DX12CommandList::drawInstanced(std::uint32_t vertexCount, std::uint32_t instanceCount, std::uint32_t startVertex, std::uint32_t startInstance)
 	{
 		m_CommandList->DrawInstanced(vertexCount, instanceCount, startVertex, startInstance);
+	}
+
+	void DX12CommandList::drawIndexedInstanced(std::uint32_t indexCount, std::uint32_t instanceCount, std::uint32_t startIndex, std::uint32_t startVertex, std::uint32_t startInstance)
+	{
+		m_CommandList->DrawIndexedInstanced(indexCount, instanceCount, startIndex, startVertex, startInstance);
 	}
 
 	ECommandListType DX12CommandList::type() const

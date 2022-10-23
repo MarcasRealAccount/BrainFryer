@@ -48,7 +48,7 @@ namespace Brainfryer::DX12
 		IDXGIOutput2 : public IDXGIOutput1
 		{
 		public:
-			virtual bool SupportsOverlays() = 0;
+			virtual BOOL SupportsOverlays() = 0;
 		};
 
 		MIDL_INTERFACE("25483823-cd46-4c7d-86ca-47aa95b837bd")

@@ -10,8 +10,8 @@ namespace Brainfryer::DX12
 		IDXGIDisplayControl : public IUnknown
 		{
 		public:
-			virtual bool IsStereoEnabled()              = 0;
-			virtual void SetStereoEnabled(bool enabled) = 0;
+			virtual BOOL IsStereoEnabled()              = 0;
+			virtual void SetStereoEnabled(BOOL enabled) = 0;
 		};
 
 		struct DXGI_OUTDUPL_MOVE_RECT
@@ -24,13 +24,13 @@ namespace Brainfryer::DX12
 		{
 			DXGI_MODE_DESC     ModeDesc;
 			DXGI_MODE_ROTATION Rotation;
-			bool               DesktopImageInSystemMemory;
+			BOOL               DesktopImageInSystemMemory;
 		};
 
 		struct DXGI_OUTDUPL_POINTER_POSITION
 		{
 			POINT Position;
-			bool  Visible;
+			BOOL  Visible;
 		};
 
 		enum DXGI_OUTDUPL_POINTER_SHAPE_TYPE
@@ -54,8 +54,8 @@ namespace Brainfryer::DX12
 			LARGE_INTEGER                 LastPresentTime;
 			LARGE_INTEGER                 LastMouseUpdateTime;
 			UINT                          AccumulatedFrames;
-			bool                          RectsCoalesced;
-			bool                          ProtectedContentMaskedOut;
+			BOOL                          RectsCoalesced;
+			BOOL                          ProtectedContentMaskedOut;
 			DXGI_OUTDUPL_POINTER_POSITION PointerPosition;
 			UINT                          TotalMetadataBufferSize;
 			UINT                          PointerShapeBufferSize;
@@ -118,7 +118,7 @@ namespace Brainfryer::DX12
 		public:
 			virtual HRESULT OfferResources(UINT NumResources, IDXGIResource* const* ppResources, DXGI_OFFER_RESOURCE_PRIORITY Priority) = 0;
 
-			virtual HRESULT ReclaimResources(UINT NumResources, IDXGIResource* const* ppResources, bool* pDiscarded) = 0;
+			virtual HRESULT ReclaimResources(UINT NumResources, IDXGIResource* const* ppResources, BOOL* pDiscarded) = 0;
 
 			virtual HRESULT EnqueueSetEvent(HANDLE hEvent) = 0;
 		};
@@ -136,7 +136,7 @@ namespace Brainfryer::DX12
 			DXGI_FORMAT              Format;
 			DXGI_MODE_SCANLINE_ORDER ScanlineOrdering;
 			DXGI_MODE_SCALING        Scaling;
-			bool                     Stereo;
+			BOOL                     Stereo;
 		};
 
 		enum DXGI_SCALING
@@ -151,7 +151,7 @@ namespace Brainfryer::DX12
 			UINT             Width;
 			UINT             Height;
 			DXGI_FORMAT      Format;
-			bool             Stereo;
+			BOOL             Stereo;
 			DXGI_SAMPLE_DESC SampleDesc;
 			DXGI_USAGE       BufferUsage;
 			UINT             BufferCount;
@@ -166,7 +166,7 @@ namespace Brainfryer::DX12
 			DXGI_RATIONAL            RefreshRate;
 			DXGI_MODE_SCANLINE_ORDER ScanlineOrdering;
 			DXGI_MODE_SCALING        Scaling;
-			bool                     Windowed;
+			BOOL                     Windowed;
 		};
 
 		struct DXGI_PRESENT_PARAMETERS
@@ -191,7 +191,7 @@ namespace Brainfryer::DX12
 
 			virtual HRESULT Present1(UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) = 0;
 
-			virtual bool IsTemporaryMonoSupported() = 0;
+			virtual BOOL IsTemporaryMonoSupported() = 0;
 
 			virtual HRESULT GetRestrictToOutput(IDXGIOutput * *ppRestrictToOutput) = 0;
 
@@ -206,7 +206,7 @@ namespace Brainfryer::DX12
 		IDXGIFactory2 : public IDXGIFactory1
 		{
 		public:
-			virtual bool IsWindowedStereoEnabled() = 0;
+			virtual BOOL IsWindowedStereoEnabled() = 0;
 
 			virtual HRESULT CreateSwapChainForHwnd(IUnknown * pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1* pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) = 0;
 

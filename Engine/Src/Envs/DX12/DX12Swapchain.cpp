@@ -1,6 +1,7 @@
 #include "Brainfryer/Envs/DX12/DX12Swapchain.h"
 #include "Brainfryer/Envs/DX12/DX12CommandList.h"
 #include "Brainfryer/Envs/DX12/DX12Context.h"
+#include "Brainfryer/Envs/DX12/DX12Format.h"
 #include "Brainfryer/Envs/Windows/Win32Window.h"
 
 #include <format>
@@ -21,10 +22,13 @@ namespace Brainfryer::DX12
 
 		m_WindowRect = m_Window->windowRect();
 
+		// TODO(MarcasRealAccount): Get the correct format for the swapchain
+		m_Format = EFormat::R8G8B8A8_UNORM;
+
 		DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
 		swapchainDesc.Width  = m_WindowRect.w;
 		swapchainDesc.Height = m_WindowRect.h;
-		swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapchainDesc.Format = DX12Format(m_Format);
 		swapchainDesc.Stereo = false;
 
 		swapchainDesc.SampleDesc.Count   = 1;
@@ -178,10 +182,5 @@ namespace Brainfryer::DX12
 	{
 		HRVLT(m_Swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING));
 		m_ImageIndex = m_Swapchain->GetCurrentBackBufferIndex();
-	}
-
-	std::uint32_t DX12Swapchain::imageIndex() const
-	{
-		return m_ImageIndex;
 	}
 } // namespace Brainfryer::DX12

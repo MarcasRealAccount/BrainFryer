@@ -1371,10 +1371,10 @@ namespace Brainfryer::DX12
 
 		struct D3D12_DEPTH_STENCIL_DESC
 		{
-			bool                       DepthEnable;
+			BOOL                       DepthEnable;
 			D3D12_DEPTH_WRITE_MASK     DepthWriteMask;
 			D3D12_COMPARISON_FUNC      DepthFunc;
-			bool                       StencilEnable;
+			BOOL                       StencilEnable;
 			std::uint8_t               StencilReadMask;
 			std::uint8_t               StencilWriteMask;
 			D3D12_DEPTH_STENCILOP_DESC FrontFace;
@@ -1383,15 +1383,15 @@ namespace Brainfryer::DX12
 
 		struct D3D12_DEPTH_STENCIL_DESC1
 		{
-			bool                       DepthEnable;
+			BOOL                       DepthEnable;
 			D3D12_DEPTH_WRITE_MASK     DepthWriteMask;
 			D3D12_COMPARISON_FUNC      DepthFunc;
-			bool                       StencilEnable;
+			BOOL                       StencilEnable;
 			std::uint8_t               StencilReadMask;
 			std::uint8_t               StencilWriteMask;
 			D3D12_DEPTH_STENCILOP_DESC FrontFace;
 			D3D12_DEPTH_STENCILOP_DESC BackFace;
-			bool                       DepthBoundsTestEnable;
+			BOOL                       DepthBoundsTestEnable;
 		};
 
 		enum D3D12_BLEND
@@ -1457,8 +1457,8 @@ namespace Brainfryer::DX12
 
 		struct D3D12_RENDER_TARGET_BLEND_DESC
 		{
-			bool           BlendEnable;
-			bool           LogicOpEnable;
+			BOOL           BlendEnable;
+			BOOL           LogicOpEnable;
 			D3D12_BLEND    SrcBlend;
 			D3D12_BLEND    DestBlend;
 			D3D12_BLEND_OP BlendOp;
@@ -1471,8 +1471,8 @@ namespace Brainfryer::DX12
 
 		struct D3D12_BLEND_DESC
 		{
-			bool                           AlphaToCoverageEnable;
-			bool                           IndependentBlendEnable;
+			BOOL                           AlphaToCoverageEnable;
+			BOOL                           IndependentBlendEnable;
 			D3D12_RENDER_TARGET_BLEND_DESC RenderTarget[8];
 		};
 
@@ -1486,13 +1486,13 @@ namespace Brainfryer::DX12
 		{
 			D3D12_FILL_MODE                       FillMode;
 			D3D12_CULL_MODE                       CullMode;
-			bool                                  FrontCounterClockwise;
+			BOOL                                  FrontCounterClockwise;
 			INT                                   DepthBias;
 			FLOAT                                 DepthBiasClamp;
 			FLOAT                                 SlopeScaledDepthBias;
-			bool                                  DepthClipEnable;
-			bool                                  MultisampleEnable;
-			bool                                  AntialiasedLineEnable;
+			BOOL                                  DepthClipEnable;
+			BOOL                                  MultisampleEnable;
+			BOOL                                  AntialiasedLineEnable;
 			UINT                                  ForcedSampleCount;
 			D3D12_CONSERVATIVE_RASTERIZATION_MODE ConservativeRaster;
 		};
@@ -1792,36 +1792,36 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS
 		{
-			bool                                  DoublePrecisionFloatShaderOps;
-			bool                                  OutputMergerLogicOp;
+			BOOL                                  DoublePrecisionFloatShaderOps;
+			BOOL                                  OutputMergerLogicOp;
 			D3D12_SHADER_MIN_PRECISION_SUPPORT    MinPrecisionSupport;
 			D3D12_TILED_RESOURCES_TIER            TiledResourcesTier;
 			D3D12_RESOURCE_BINDING_TIER           ResourceBindingTier;
-			bool                                  PSSpecifiedStencilRefSupported;
-			bool                                  TypedUAVLoadAdditionalFormats;
-			bool                                  ROVsSupported;
+			BOOL                                  PSSpecifiedStencilRefSupported;
+			BOOL                                  TypedUAVLoadAdditionalFormats;
+			BOOL                                  ROVsSupported;
 			D3D12_CONSERVATIVE_RASTERIZATION_TIER ConservativeRasterizationTier;
 			UINT                                  MaxGPUVirtualAddressBitsPerResource;
-			bool                                  StandardSwizzle64KBSupported;
+			BOOL                                  StandardSwizzle64KBSupported;
 			D3D12_CROSS_NODE_SHARING_TIER         CrossNodeSharingTier;
-			bool                                  CrossAdapterRowMajorTextureSupported;
-			bool                                  VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation;
+			BOOL                                  CrossAdapterRowMajorTextureSupported;
+			BOOL                                  VPAndRTArrayIndexFromAnyShaderFeedingRasterizerSupportedWithoutGSEmulation;
 			D3D12_RESOURCE_HEAP_TIER              ResourceHeapTier;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS1
 		{
-			bool WaveOps;
+			BOOL WaveOps;
 			UINT WaveLaneCountMin;
 			UINT WaveLaneCountMax;
 			UINT TotalLaneCount;
-			bool ExpandedComputeResourceStates;
-			bool Int64ShaderOps;
+			BOOL ExpandedComputeResourceStates;
+			BOOL Int64ShaderOps;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS2
 		{
-			bool                                     DepthBoundsTestSupported;
+			BOOL                                     DepthBoundsTestSupported;
 			D3D12_PROGRAMMABLE_SAMPLE_POSITIONS_TIER ProgrammableSamplePositionsTier;
 		};
 
@@ -1840,18 +1840,18 @@ namespace Brainfryer::DX12
 		struct D3D12_FEATURE_DATA_ARCHITECTURE
 		{
 			UINT NodeIndex;
-			bool TileBasedRenderer;
-			bool UMA;
-			bool CacheCoherentUMA;
+			BOOL TileBasedRenderer;
+			BOOL UMA;
+			BOOL CacheCoherentUMA;
 		};
 
 		struct D3D12_FEATURE_DATA_ARCHITECTURE1
 		{
 			UINT NodeIndex;
-			bool TileBasedRenderer;
-			bool UMA;
-			bool CacheCoherentUMA;
-			bool IsolatedMMU;
+			BOOL TileBasedRenderer;
+			BOOL UMA;
+			BOOL CacheCoherentUMA;
+			BOOL IsolatedMMU;
 		};
 
 		struct D3D12_FEATURE_DATA_FEATURE_LEVELS
@@ -1928,7 +1928,7 @@ namespace Brainfryer::DX12
 		{
 			D3D12_COMMAND_LIST_TYPE CommandListType;
 			UINT                    Priority;
-			bool                    PriorityForTypeIsSupported;
+			BOOL                    PriorityForTypeIsSupported;
 		};
 
 		enum D3D12_COMMAND_LIST_SUPPORT_FLAGS
@@ -1945,16 +1945,16 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS3
 		{
-			bool                             CopyQueueTimestampQueriesSupported;
-			bool                             CastingFullyTypedFormatSupported;
+			BOOL                             CopyQueueTimestampQueriesSupported;
+			BOOL                             CastingFullyTypedFormatSupported;
 			D3D12_COMMAND_LIST_SUPPORT_FLAGS WriteBufferImmediateSupportFlags;
 			D3D12_VIEW_INSTANCING_TIER       ViewInstancingTier;
-			bool                             BarycentricsSupported;
+			BOOL                             BarycentricsSupported;
 		};
 
 		struct D3D12_FEATURE_DATA_EXISTING_HEAPS
 		{
-			bool Supported;
+			BOOL Supported;
 		};
 
 		enum D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER
@@ -1966,15 +1966,15 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_DISPLAYABLE
 		{
-			bool                                     DisplayableTexture;
+			BOOL                                     DisplayableTexture;
 			D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER SharedResourceCompatibilityTier;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS4
 		{
-			bool                                     MSAA64KBAlignedTextureSupported;
+			BOOL                                     MSAA64KBAlignedTextureSupported;
 			D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER SharedResourceCompatibilityTier;
-			bool                                     Native16BitShaderOpsSupported;
+			BOOL                                     Native16BitShaderOpsSupported;
 		};
 
 		enum D3D12_HEAP_SERIALIZATION_TIER
@@ -1992,7 +1992,7 @@ namespace Brainfryer::DX12
 		struct D3D12_FEATURE_DATA_CROSS_NODE
 		{
 			D3D12_CROSS_NODE_SHARING_TIER SharingTier;
-			bool                          AtomicShaderInstructions;
+			BOOL                          AtomicShaderInstructions;
 		};
 
 		enum D3D12_RENDER_PASS_TIER
@@ -2011,7 +2011,7 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS5
 		{
-			bool                   SRVOnlyTiledResourceTier3;
+			BOOL                   SRVOnlyTiledResourceTier3;
 			D3D12_RENDER_PASS_TIER RenderPassesTier;
 			D3D12_RAYTRACING_TIER  RaytracingTier;
 		};
@@ -2025,11 +2025,11 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS6
 		{
-			bool                             AdditionalShadingRatesSupported;
-			bool                             PerPrimitiveShadingRateSupportedWithViewportIndexing;
+			BOOL                             AdditionalShadingRatesSupported;
+			BOOL                             PerPrimitiveShadingRateSupportedWithViewportIndexing;
 			D3D12_VARIABLE_SHADING_RATE_TIER VariableShadingRateTier;
 			UINT                             ShadingRateImageTileSize;
-			bool                             BackgroundProcessingSupported;
+			BOOL                             BackgroundProcessingSupported;
 		};
 
 		enum D3D12_MESH_SHADER_TIER
@@ -2063,7 +2063,7 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS8
 		{
-			bool UnalignedBlockTexturesSupported;
+			BOOL UnalignedBlockTexturesSupported;
 		};
 
 		enum D3D12_WAVE_MMA_TIER
@@ -2074,23 +2074,23 @@ namespace Brainfryer::DX12
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS9
 		{
-			bool                MeshShaderPipelineStatsSupported;
-			bool                MeshShaderSupportsFullRangeRenderTargetArrayIndex;
-			bool                AtomicInt64OnTypedResourceSupported;
-			bool                AtomicInt64OnGroupSharedSupported;
-			bool                DerivativesInMeshAndAmplificationShadersSupported;
+			BOOL                MeshShaderPipelineStatsSupported;
+			BOOL                MeshShaderSupportsFullRangeRenderTargetArrayIndex;
+			BOOL                AtomicInt64OnTypedResourceSupported;
+			BOOL                AtomicInt64OnGroupSharedSupported;
+			BOOL                DerivativesInMeshAndAmplificationShadersSupported;
 			D3D12_WAVE_MMA_TIER WaveMMATier;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS10
 		{
-			bool VariableRateShadingSumCombinerSupported;
-			bool MeshShaderPerPrimitiveShadingRateSupported;
+			BOOL VariableRateShadingSumCombinerSupported;
+			BOOL MeshShaderPerPrimitiveShadingRateSupported;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS11
 		{
-			bool AtomicInt64OnDescriptorHeapResourceSupported;
+			BOOL AtomicInt64OnDescriptorHeapResourceSupported;
 		};
 
 		enum D3D12_TRI_STATE
@@ -2103,18 +2103,18 @@ namespace Brainfryer::DX12
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS12
 		{
 			D3D12_TRI_STATE MSPrimitivesPipelineStatisticIncludesCulledPrimitives;
-			bool            EnhancedBarriersSupported;
-			bool            RelaxedFormatCastingSupported;
+			BOOL            EnhancedBarriersSupported;
+			BOOL            RelaxedFormatCastingSupported;
 		};
 
 		struct D3D12_FEATURE_DATA_D3D12_OPTIONS13
 		{
-			bool UnrestrictedBufferTextureCopyPitchSupported;
-			bool UnrestrictedVertexElementAlignmentSupported;
-			bool InvertedViewportHeightFlipsYSupported;
-			bool InvertedViewportDepthFlipsZSupported;
-			bool TextureCopyBetweenDimensionsSupported;
-			bool AlphaBlendFactorSupported;
+			BOOL UnrestrictedBufferTextureCopyPitchSupported;
+			BOOL UnrestrictedVertexElementAlignmentSupported;
+			BOOL InvertedViewportHeightFlipsYSupported;
+			BOOL InvertedViewportDepthFlipsZSupported;
+			BOOL TextureCopyBetweenDimensionsSupported;
+			BOOL AlphaBlendFactorSupported;
 		};
 
 		struct D3D12_RESOURCE_ALLOCATION_INFO
@@ -2309,7 +2309,7 @@ namespace Brainfryer::DX12
 		struct D3D12_TILE_REGION_SIZE
 		{
 			UINT         NumTiles;
-			bool         UseBox;
+			BOOL         UseBox;
 			UINT         Width;
 			std::uint8_t Height;
 			std::uint8_t Depth;
@@ -2750,11 +2750,11 @@ namespace Brainfryer::DX12
 		{
 			return static_cast<D3D12_FILTER_REDUCTION_TYPE>((D3D12Filter >> D3D12_FILTER_REDUCTION_TYPE_SHIFT) & D3D12_FILTER_REDUCTION_TYPE_MASK);
 		}
-		static constexpr bool D3D12_DECODE_IS_COMPARISON_FILTER(D3D12_FILTER D3D12Filter)
+		static constexpr BOOL D3D12_DECODE_IS_COMPARISON_FILTER(D3D12_FILTER D3D12Filter)
 		{
 			return (D3D12_DECODE_FILTER_REDUCTION(D3D12Filter) == D3D12_FILTER_REDUCTION_TYPE_COMPARISON);
 		}
-		static constexpr bool D3D12_DECODE_IS_ANISOTROPIC_FILTER(D3D12_FILTER D3D12Filter)
+		static constexpr BOOL D3D12_DECODE_IS_ANISOTROPIC_FILTER(D3D12_FILTER D3D12Filter)
 		{
 			return D3D12Filter & D3D12_ANISOTROPIC_FILTERING_BIT && D3D12_FILTER_TYPE_LINEAR == D3D12_DECODE_MIN_FILTER(D3D12Filter) && D3D12_FILTER_TYPE_LINEAR == D3D12_DECODE_MAG_FILTER(D3D12Filter) && D3D12_FILTER_TYPE_LINEAR == D3D12_DECODE_MIP_FILTER(D3D12Filter);
 		}
@@ -3596,7 +3596,7 @@ namespace Brainfryer::DX12
 			virtual void IASetVertexBuffers(UINT StartSlot, UINT NumViews, const D3D12_VERTEX_BUFFER_VIEW* pViews) = 0;
 
 			virtual void SOSetTargets(UINT StartSlot, UINT NumViews, const D3D12_STREAM_OUTPUT_BUFFER_VIEW* pViews)                                                                                                                          = 0;
-			virtual void OMSetRenderTargets(UINT NumRenderTargetDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE* pRenderTargetDescriptors, bool RTsSingleHandleToDescriptorRange, const D3D12_CPU_DESCRIPTOR_HANDLE* pDepthStencilDescriptor) = 0;
+			virtual void OMSetRenderTargets(UINT NumRenderTargetDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE* pRenderTargetDescriptors, BOOL RTsSingleHandleToDescriptorRange, const D3D12_CPU_DESCRIPTOR_HANDLE* pDepthStencilDescriptor) = 0;
 
 			virtual void ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView, D3D12_CLEAR_FLAGS ClearFlags, FLOAT Depth, std::uint8_t Stencil, UINT NumRects, const D3D12_RECT* pRects)                                                = 0;
 			virtual void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetView, const FLOAT ColorRGBA[4], UINT NumRects, const D3D12_RECT* pRects)                                                                                       = 0;
@@ -3750,7 +3750,7 @@ namespace Brainfryer::DX12
 
 			virtual HRESULT CreateQueryHeap(const D3D12_QUERY_HEAP_DESC* pDesc, const GUID& riid, void** ppvHeap) = 0;
 
-			virtual HRESULT SetStablePowerState(bool Enable) = 0;
+			virtual HRESULT SetStablePowerState(BOOL Enable) = 0;
 
 			virtual HRESULT CreateCommandSignature(const D3D12_COMMAND_SIGNATURE_DESC* pDesc, ID3D12RootSignature* pRootSignature, const GUID& riid, void** ppvCommandSignature) = 0;
 
@@ -4724,7 +4724,7 @@ namespace Brainfryer::DX12
 		ID3D12Device6 : public ID3D12Device5
 		{
 		public:
-			virtual HRESULT SetBackgroundProcessingMode(D3D12_BACKGROUND_PROCESSING_MODE Mode, D3D12_MEASUREMENTS_ACTION MeasurementsAction, HANDLE hEventToSignalUponCompletion, bool* pbFurtherMeasurementsDesired) = 0;
+			virtual HRESULT SetBackgroundProcessingMode(D3D12_BACKGROUND_PROCESSING_MODE Mode, D3D12_MEASUREMENTS_ACTION MeasurementsAction, HANDLE hEventToSignalUponCompletion, BOOL* pbFurtherMeasurementsDesired) = 0;
 		};
 
 		struct D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT
@@ -4853,7 +4853,7 @@ namespace Brainfryer::DX12
 			const D3D12_RENDER_PASS_ENDING_ACCESS_RESOLVE_SUBRESOURCE_PARAMETERS* pSubresourceParameters;
 			DXGI_FORMAT                                                           Format;
 			D3D12_RESOLVE_MODE                                                    ResolveMode;
-			bool                                                                  PreserveResolveSource;
+			BOOL                                                                  PreserveResolveSource;
 		};
 
 		struct D3D12_RENDER_PASS_ENDING_ACCESS
@@ -5173,9 +5173,9 @@ namespace Brainfryer::DX12
 		ID3D12Tools : public IUnknown
 		{
 		public:
-			virtual void EnableShaderInstrumentation(bool bEnable) = 0;
+			virtual void EnableShaderInstrumentation(BOOL bEnable) = 0;
 
-			virtual bool ShaderInstrumentationEnabled() = 0;
+			virtual BOOL ShaderInstrumentationEnabled() = 0;
 		};
 
 		struct D3D12_SUBRESOURCE_DATA
@@ -5211,9 +5211,9 @@ namespace Brainfryer::DX12
 		public:
 			virtual void EnableDebugLayer() = 0;
 
-			virtual void SetEnableGPUBasedValidation(bool Enable) = 0;
+			virtual void SetEnableGPUBasedValidation(BOOL Enable) = 0;
 
-			virtual void SetEnableSynchronizedCommandQueueValidation(bool Enable) = 0;
+			virtual void SetEnableSynchronizedCommandQueueValidation(BOOL Enable) = 0;
 		};
 
 		MIDL_INTERFACE("93a665c4-a3b2-4e5d-b692-a26ae14e3374")
@@ -5227,9 +5227,9 @@ namespace Brainfryer::DX12
 		ID3D12Debug3 : public ID3D12Debug
 		{
 		public:
-			virtual void SetEnableGPUBasedValidation(bool Enable) = 0;
+			virtual void SetEnableGPUBasedValidation(BOOL Enable) = 0;
 
-			virtual void SetEnableSynchronizedCommandQueueValidation(bool Enable) = 0;
+			virtual void SetEnableSynchronizedCommandQueueValidation(BOOL Enable) = 0;
 
 			virtual void SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS Flags) = 0;
 		};
@@ -5245,14 +5245,14 @@ namespace Brainfryer::DX12
 		ID3D12Debug5 : public ID3D12Debug4
 		{
 		public:
-			virtual void SetEnableAutoName(bool Enable) = 0;
+			virtual void SetEnableAutoName(BOOL Enable) = 0;
 		};
 
 		MIDL_INTERFACE("82a816d6-5d01-4157-97d0-4975463fd1ed")
 		ID3D12Debug6 : public ID3D12Debug5
 		{
 		public:
-			virtual void SetForceLegacyBarrierValidation(bool Enable) = 0;
+			virtual void SetForceLegacyBarrierValidation(BOOL Enable) = 0;
 		};
 
 		enum D3D12_RLDO_FLAGS
@@ -5341,7 +5341,7 @@ namespace Brainfryer::DX12
 		ID3D12DebugCommandQueue : public IUnknown
 		{
 		public:
-			virtual bool AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
+			virtual BOOL AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
 		};
 
 		enum D3D12_DEBUG_COMMAND_LIST_PARAMETER_TYPE
@@ -5358,7 +5358,7 @@ namespace Brainfryer::DX12
 		ID3D12DebugCommandList1 : public IUnknown
 		{
 		public:
-			virtual bool AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
+			virtual BOOL AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
 
 			virtual HRESULT SetDebugParameter(D3D12_DEBUG_COMMAND_LIST_PARAMETER_TYPE Type, const void* pData, UINT DataSize) = 0;
 			virtual HRESULT GetDebugParameter(D3D12_DEBUG_COMMAND_LIST_PARAMETER_TYPE Type, void* pData, UINT DataSize)       = 0;
@@ -5368,7 +5368,7 @@ namespace Brainfryer::DX12
 		ID3D12DebugCommandList : public IUnknown
 		{
 		public:
-			virtual bool AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
+			virtual BOOL AssertResourceState(ID3D12Resource * pResource, UINT Subresource, UINT State) = 0;
 
 			virtual HRESULT             SetFeatureMask(D3D12_DEBUG_FEATURE Mask) = 0;
 			virtual D3D12_DEBUG_FEATURE GetFeatureMask()                         = 0;
@@ -6407,15 +6407,15 @@ namespace Brainfryer::DX12
 			virtual HRESULT AddMessage(D3D12_MESSAGE_CATEGORY Category, D3D12_MESSAGE_SEVERITY Severity, D3D12_MESSAGE_ID ID, LPCSTR pDescription) = 0;
 			virtual HRESULT AddApplicationMessage(D3D12_MESSAGE_SEVERITY Severity, LPCSTR pDescription)                                            = 0;
 
-			virtual HRESULT SetBreakOnCategory(D3D12_MESSAGE_CATEGORY Category, bool bEnable) = 0;
-			virtual HRESULT SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY Severity, bool bEnable) = 0;
-			virtual HRESULT SetBreakOnID(D3D12_MESSAGE_ID ID, bool bEnable)                   = 0;
-			virtual bool    GetBreakOnCategory(D3D12_MESSAGE_CATEGORY Category)               = 0;
-			virtual bool    GetBreakOnSeverity(D3D12_MESSAGE_SEVERITY Severity)               = 0;
-			virtual bool    GetBreakOnID(D3D12_MESSAGE_ID ID)                                 = 0;
+			virtual HRESULT SetBreakOnCategory(D3D12_MESSAGE_CATEGORY Category, BOOL bEnable) = 0;
+			virtual HRESULT SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY Severity, BOOL bEnable) = 0;
+			virtual HRESULT SetBreakOnID(D3D12_MESSAGE_ID ID, BOOL bEnable)                   = 0;
+			virtual BOOL    GetBreakOnCategory(D3D12_MESSAGE_CATEGORY Category)               = 0;
+			virtual BOOL    GetBreakOnSeverity(D3D12_MESSAGE_SEVERITY Severity)               = 0;
+			virtual BOOL    GetBreakOnID(D3D12_MESSAGE_ID ID)                                 = 0;
 
-			virtual void SetMuteDebugOutput(bool bMute) = 0;
-			virtual bool GetMuteDebugOutput()           = 0;
+			virtual void SetMuteDebugOutput(BOOL bMute) = 0;
+			virtual BOOL GetMuteDebugOutput()           = 0;
 		};
 
 		enum D3D12_MESSAGE_CALLBACK_FLAGS

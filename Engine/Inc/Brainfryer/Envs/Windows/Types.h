@@ -28,6 +28,7 @@ namespace Brainfryer::Windows::Types
 	using QWORD     = std::uint64_t;
 	using FLOAT     = float;
 	using DOUBLE    = double;
+	using BOOL      = std::int32_t;
 	using ATOM      = std::uint32_t;
 	using INT_PTR   = std::int64_t;
 	using UINT_PTR  = std::uint64_t;

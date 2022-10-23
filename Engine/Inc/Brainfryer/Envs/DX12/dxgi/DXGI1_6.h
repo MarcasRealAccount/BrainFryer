@@ -46,7 +46,7 @@ namespace Brainfryer::DX12
 		{
 			wchar_t               DeviceName[32];
 			RECT                  DesktopCoordinates;
-			bool                  AttachedToDesktop;
+			BOOL                  AttachedToDesktop;
 			DXGI_MODE_ROTATION    Rotation;
 			HMONITOR              Monitor;
 			UINT                  BitsPerColor;

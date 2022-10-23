@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Brainfryer/Window/Window.h"
+#include "Format.h"
 
 namespace Brainfryer
 {
@@ -27,6 +28,7 @@ namespace Brainfryer
 		virtual void present()                                                           = 0;
 
 		virtual std::uint32_t imageIndex() const = 0;
+		virtual EFormat       format() const     = 0;
 
 		virtual bool initialized() const = 0;
 	};

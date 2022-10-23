@@ -105,7 +105,7 @@ namespace Brainfryer::DX12
 
 		struct DXGI_GAMMA_CONTROL_CAPABILITIES
 		{
-			bool  ScaleAndOffsetSupported;
+			BOOL  ScaleAndOffsetSupported;
 			float MaxConvertedValue;
 			float MinConvertedValue;
 			UINT  NumGammaControlPoints;
@@ -187,7 +187,7 @@ namespace Brainfryer::DX12
 		{
 			wchar_t            DeviceName[32];
 			RECT               DesktopCoordinates;
-			bool               AttachedToDesktop;
+			BOOL               AttachedToDesktop;
 			DXGI_MODE_ROTATION Rotation;
 			HMONITOR           Monitor;
 		};
@@ -250,7 +250,7 @@ namespace Brainfryer::DX12
 			DXGI_USAGE       BufferUsage;
 			UINT             BufferCount;
 			HWND             OutputWindow;
-			bool             Windowed;
+			BOOL             Windowed;
 			DXGI_SWAP_EFFECT SwapEffect;
 			UINT             Flags;
 		};
@@ -312,7 +312,7 @@ namespace Brainfryer::DX12
 		IDXGISurface1 : public IDXGISurface
 		{
 		public:
-			virtual HRESULT GetDC(bool Discard, HDC* phdc) = 0;
+			virtual HRESULT GetDC(BOOL Discard, HDC* phdc) = 0;
 
 			virtual HRESULT ReleaseDC(RECT * pDirtyRect) = 0;
 		};
@@ -343,7 +343,7 @@ namespace Brainfryer::DX12
 
 			virtual HRESULT WaitForVBlank() = 0;
 
-			virtual HRESULT TakeOwnership(IUnknown * pDevice, bool Exclusive) = 0;
+			virtual HRESULT TakeOwnership(IUnknown * pDevice, BOOL Exclusive) = 0;
 			virtual void    ReleaseOwnership()                                = 0;
 
 			virtual HRESULT GetGammaControlCapabilities(DXGI_GAMMA_CONTROL_CAPABILITIES * pGammaCaps) = 0;
@@ -375,8 +375,8 @@ namespace Brainfryer::DX12
 
 			virtual HRESULT GetBuffer(UINT Buffer, const GUID& riid, void** ppSurface) = 0;
 
-			virtual HRESULT SetFullscreenState(bool Fullscreen, IDXGIOutput* pTarget)     = 0;
-			virtual HRESULT GetFullscreenState(bool* pFullscreen, IDXGIOutput** ppTarget) = 0;
+			virtual HRESULT SetFullscreenState(BOOL Fullscreen, IDXGIOutput* pTarget)     = 0;
+			virtual HRESULT GetFullscreenState(BOOL* pFullscreen, IDXGIOutput** ppTarget) = 0;
 
 			virtual HRESULT GetDesc(DXGI_SWAP_CHAIN_DESC * pDesc) = 0;
 
@@ -461,7 +461,7 @@ namespace Brainfryer::DX12
 		public:
 			virtual HRESULT EnumAdapters1(UINT Adapter, struct IDXGIAdapter1 * *ppAdapter) = 0;
 
-			virtual bool IsCurrent() = 0;
+			virtual BOOL IsCurrent() = 0;
 		};
 
 		MIDL_INTERFACE("29038f61-3839-4626-91fd-086879011a05")

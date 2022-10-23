@@ -18,7 +18,8 @@ namespace Brainfryer::DX12
 		virtual void unbind(CommandList* commandList) override;
 		virtual void present() override;
 
-		virtual std::uint32_t imageIndex() const override;
+		virtual std::uint32_t imageIndex() const override { return m_ImageIndex; }
+		virtual EFormat       format() const override { return m_Format; }
 
 		virtual bool initialized() const override { return m_Swapchain.valid(); }
 
@@ -36,5 +37,6 @@ namespace Brainfryer::DX12
 		std::size_t                      m_HeapIncrement;
 
 		std::uint32_t m_ImageIndex;
+		EFormat       m_Format;
 	};
 } // namespace Brainfryer::DX12

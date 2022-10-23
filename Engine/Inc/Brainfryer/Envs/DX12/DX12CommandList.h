@@ -30,8 +30,12 @@ namespace Brainfryer::DX12
 		DX12CommandList(DX12CommandList&& move) noexcept;
 		~DX12CommandList();
 
-		virtual void begin() override;
+		virtual void begin(GraphicsPipeline* initialPipeline = nullptr) override;
 		virtual void end() override;
+
+		virtual void setPrimitiveTopology(EPrimitiveTopology topology) override;
+		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) override;
+		virtual void drawInstanced(std::uint32_t vertexCount, std::uint32_t instanceCount, std::uint32_t startVertex, std::uint32_t startInstance) override;
 
 		virtual ECommandListType type() const override;
 

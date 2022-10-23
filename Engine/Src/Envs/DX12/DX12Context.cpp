@@ -7,7 +7,7 @@
 
 namespace Brainfryer::DX12
 {
-	void DX12Context::DebugMessageCallback(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void* pContext)
+	void DX12Context::DebugMessageCallback([[maybe_unused]] D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, [[maybe_unused]] D3D12_MESSAGE_ID id, LPCSTR description, [[maybe_unused]] void* pContext)
 	{
 		auto logger = Log::GetOrCreateLogger("DX12");
 		switch (severity)
@@ -116,8 +116,6 @@ namespace Brainfryer::DX12
 		m_FrameEvent = Windows::CreateEventW(nullptr, false, false, nullptr); // TODO(MarcasRealAccount): Add Windows Event name?
 		if (!m_FrameEvent)
 			return;
-
-		waitForGPU();
 	}
 
 	DX12Context::~DX12Context()

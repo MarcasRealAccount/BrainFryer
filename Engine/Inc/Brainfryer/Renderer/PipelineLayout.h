@@ -1,5 +1,9 @@
 #pragma once
 
+#include "ComparisonFunc.h"
+#include "Filter.h"
+#include "ImageAddressMode.h"
+
 #include <memory>
 #include <variant>
 #include <vector>
@@ -29,6 +33,14 @@ namespace Brainfryer
 		Sampler
 	};
 
+	enum class EPipelineLayoutDescriptorRangeFlags
+	{
+		None                = 0x0,
+		DescriptorsVolatile = 0x1,
+		DataVolatile        = 0x2,
+		DataStatic          = 0x8
+	};
+
 	enum class EShaderVisibility
 	{
 		All,
@@ -39,6 +51,13 @@ namespace Brainfryer
 		Pixel,
 		Amplification,
 		Mesh
+	};
+
+	enum class EBorderColor
+	{
+		TransparentBlack,
+		OpaqueBlack,
+		OpaqueWhite
 	};
 
 	struct PipelineLayoutDescriptor
@@ -56,11 +75,12 @@ namespace Brainfryer
 
 	struct PipelineLayoutDescriptorRange
 	{
-		EPipelineLayoutDescriptorRangeType type;
-		std::uint32_t                      numDescriptors;
-		std::uint32_t                      binding;
-		std::uint32_t                      space;
-		std::uint32_t                      offset;
+		EPipelineLayoutDescriptorRangeType  type;
+		std::uint32_t                       numDescriptors;
+		std::uint32_t                       binding;
+		std::uint32_t                       space;
+		std::uint32_t                       offset;
+		EPipelineLayoutDescriptorRangeFlags flags;
 	};
 
 	struct PipelineLayoutDescriptorTable
@@ -71,8 +91,14 @@ namespace Brainfryer
 	struct PipelineLayoutParameter
 	{
 	public:
+		PipelineLayoutParameter() = default;
+		PipelineLayoutParameter(EPipelineLayoutParameterType type, PipelineLayoutDescriptor descriptor, EShaderVisibility visibility = EShaderVisibility::All);
+		PipelineLayoutParameter(PipelineLayoutConstants constants, EShaderVisibility visibility = EShaderVisibility::All);
+		PipelineLayoutParameter(PipelineLayoutDescriptorTable descriptorTable, EShaderVisibility visibility = EShaderVisibility::All);
+
+	public:
 		EPipelineLayoutParameterType type;
-		EShaderVisibility            visiblity;
+		EShaderVisibility            visibility;
 		std::variant<PipelineLayoutDescriptor,
 		             PipelineLayoutConstants,
 		             PipelineLayoutDescriptorTable>
@@ -82,7 +108,20 @@ namespace Brainfryer
 	struct PipelineLayoutStaticSampler
 	{
 	public:
-		// TODO(MarcasRealAccount): Implement static samplers
+		EFilter           minFilter;
+		EFilter           magFilter;
+		EImageAddressMode addressU;
+		EImageAddressMode addressV;
+		EImageAddressMode addressW;
+		float             mipLodBias;
+		std::uint32_t     maxAnisotropy;
+		EComparisonFunc   comparisonFunc;
+		EBorderColor      borderColor;
+		float             minLod;
+		float             maxLod;
+		std::uint32_t     binding;
+		std::uint32_t     space;
+		EShaderVisibility visibility;
 	};
 
 	struct PipelineLayoutInfo

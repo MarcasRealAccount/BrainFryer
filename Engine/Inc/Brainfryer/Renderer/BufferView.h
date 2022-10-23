@@ -30,4 +30,15 @@ namespace Brainfryer
 		std::uint32_t size;
 		EFormat       format;
 	};
+
+	struct BufferImageView
+	{
+		Buffer*       buffer;
+		std::uint64_t offset;
+		EFormat       format;
+		std::uint16_t width;
+		std::uint16_t height;
+		std::uint16_t depth;
+		std::uint32_t rowPitch;
+	};
 } // namespace Brainfryer

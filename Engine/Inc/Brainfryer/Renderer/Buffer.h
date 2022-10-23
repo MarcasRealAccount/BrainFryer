@@ -16,14 +16,14 @@ namespace Brainfryer
 
 	enum class EBufferState
 	{
-		Common            = 0x000,
-		VertexAndConstant = 0x001,
-		Index             = 0x002,
-		UnorderedAccess   = 0x008,
-		StreamOut         = 0x100,
-		IndirectArgument  = 0x200,
-		CopyDst           = 0x400,
-		CopySrc           = 0x800
+		Common                 = 0x000,
+		VertexAndConstant      = 0x001,
+		Index                  = 0x002,
+		UnorderedAccess        = 0x008,
+		NonPixelShaderResource = 0x040,
+		IndirectArgument       = 0x200,
+		CopyDst                = 0x400,
+		CopySrc                = 0x800
 	};
 
 	struct BufferInfo

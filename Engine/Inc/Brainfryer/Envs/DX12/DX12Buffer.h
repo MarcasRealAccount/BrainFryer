@@ -23,7 +23,7 @@ namespace Brainfryer::DX12
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::VertexAndConstant)) dx12State |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::Index)) dx12State |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::UnorderedAccess)) dx12State |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		if (stateIn & static_cast<std::uint32_t>(EBufferState::StreamOut)) dx12State |= D3D12_RESOURCE_STATE_STREAM_OUT;
+		if (stateIn & static_cast<std::uint32_t>(EBufferState::NonPixelShaderResource)) dx12State |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::IndirectArgument)) dx12State |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::CopyDst)) dx12State |= D3D12_RESOURCE_STATE_COPY_DEST;
 		if (stateIn & static_cast<std::uint32_t>(EBufferState::CopySrc)) dx12State |= D3D12_RESOURCE_STATE_COPY_SOURCE;

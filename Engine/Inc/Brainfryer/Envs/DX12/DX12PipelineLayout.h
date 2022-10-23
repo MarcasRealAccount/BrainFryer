@@ -38,6 +38,16 @@ namespace Brainfryer::DX12
 		return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	}
 
+	constexpr D3D12_DESCRIPTOR_RANGE_FLAGS DX12PipelineLayoutDescriptorRangeFlags(EPipelineLayoutDescriptorRangeFlags flags)
+	{
+		std::uint32_t flg = static_cast<std::uint32_t>(flags);
+		std::uint32_t out = 0;
+		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DescriptorsVolatile)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DataVolatile)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+		if (flg & static_cast<std::uint32_t>(EPipelineLayoutDescriptorRangeFlags::DataStatic)) out |= D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC;
+		return static_cast<D3D12_DESCRIPTOR_RANGE_FLAGS>(out);
+	}
+
 	constexpr D3D12_SHADER_VISIBILITY DX12ShaderVisibility(EShaderVisibility visibility)
 	{
 		switch (visibility)
@@ -52,6 +62,17 @@ namespace Brainfryer::DX12
 		case EShaderVisibility::Mesh: return D3D12_SHADER_VISIBILITY_MESH;
 		}
 		return D3D12_SHADER_VISIBILITY_ALL;
+	}
+
+	constexpr D3D12_STATIC_BORDER_COLOR DX12BorderColor(EBorderColor color)
+	{
+		switch (color)
+		{
+		case EBorderColor::TransparentBlack: return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		case EBorderColor::OpaqueBlack: return D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+		case EBorderColor::OpaqueWhite: return D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+		}
+		return D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	}
 
 	class DX12PipelineLayout : public PipelineLayout

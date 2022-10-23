@@ -5,6 +5,21 @@
 
 namespace Brainfryer
 {
+	PipelineLayoutParameter::PipelineLayoutParameter(EPipelineLayoutParameterType type, PipelineLayoutDescriptor descriptor, EShaderVisibility visibility)
+	    : type(type),
+	      visibility(visibility),
+	      value(descriptor) {}
+
+	PipelineLayoutParameter::PipelineLayoutParameter(PipelineLayoutConstants constants, EShaderVisibility visibility)
+	    : type(EPipelineLayoutParameterType::Constants),
+	      visibility(visibility),
+	      value(constants) {}
+
+	PipelineLayoutParameter::PipelineLayoutParameter(PipelineLayoutDescriptorTable descriptorTable, EShaderVisibility visibility)
+	    : type(EPipelineLayoutParameterType::DescriptorTable),
+	      visibility(visibility),
+	      value(std::move(descriptorTable)) {}
+
 	std::unique_ptr<PipelineLayout> PipelineLayout::Create(PipelineLayoutInfo info)
 	{
 		switch (Context::CurrentAPI())

@@ -81,8 +81,25 @@ int safeMain()
 		if (!graphicsPipeline->initialized())
 			return 5;
 
+		std::unique_ptr<Brainfryer::CommandAllocator> commandAllocator;
+		{
+			Brainfryer::CommandAllocatorInfo info {};
+			info.type        = Brainfryer::ECommandListType::Direct;
+			commandAllocator = Brainfryer::CommandAllocator::Create(info);
+		}
+		if (!commandAllocator->initialized())
+			return 6;
+
+		auto loadCommandLists = commandAllocator->allocate(1);
+		if (loadCommandLists.empty())
+			return 6;
+		auto& loadCommandList = loadCommandLists[0];
+		loadCommandList->begin(nullptr);
+
 		std::unique_ptr<Brainfryer::Buffer> vertexBuffer;
+		std::unique_ptr<Brainfryer::Buffer> stagingVertexBuffer;
 		std::unique_ptr<Brainfryer::Buffer> indexBuffer;
+		std::unique_ptr<Brainfryer::Buffer> stagingIndexBuffer;
 		Brainfryer::VertexBufferView        vertexBufferView {};
 		Brainfryer::IndexBufferView         indexBufferView {};
 		{
@@ -92,50 +109,74 @@ int safeMain()
 				-0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
 			};
 
-			std::uint32_t indices[] {
+			std::uint32_t triangleIndices[] {
 				0, 1, 2
 			};
 
 			{
 				Brainfryer::BufferInfo bufferInfo {};
-				bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
-				bufferInfo.alignment = 0;
-				bufferInfo.size      = sizeof(triangleVertices);
+				bufferInfo.heapType     = Brainfryer::EHeapType::Default;
+				bufferInfo.initialState = Brainfryer::EBufferState::CopyDst;
+				bufferInfo.alignment    = 0;
+				bufferInfo.size         = sizeof(triangleVertices);
 
-				vertexBuffer = Brainfryer::Buffer::Create(bufferInfo);
+				Brainfryer::BufferInfo stagingBufferInfo {};
+				stagingBufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				stagingBufferInfo.alignment = 0;
+				stagingBufferInfo.size      = sizeof(triangleVertices);
+
+				vertexBuffer        = Brainfryer::Buffer::Create(bufferInfo);
+				stagingVertexBuffer = Brainfryer::Buffer::Create(stagingBufferInfo);
+				if (!vertexBuffer->initialized() || !stagingVertexBuffer->initialized())
+					return 7;
+
+				void* memory = stagingVertexBuffer->map();
+				std::memcpy(memory, triangleVertices, sizeof(triangleVertices));
+				stagingVertexBuffer->unmap();
+
+				vertexBuffer->copyFrom(loadCommandList.get(), { stagingVertexBuffer.get(), 0, sizeof(triangleVertices) });
+				vertexBuffer->transition(loadCommandList.get(), Brainfryer::EBufferState::VertexAndConstant);
 			}
-			if (!vertexBuffer->initialized())
-				return 6;
 
 			{
 				Brainfryer::BufferInfo bufferInfo {};
-				bufferInfo.heapType  = Brainfryer::EHeapType::Upload;
-				bufferInfo.alignment = 0;
-				bufferInfo.size      = sizeof(indices);
+				bufferInfo.heapType     = Brainfryer::EHeapType::Default;
+				bufferInfo.initialState = Brainfryer::EBufferState::CopyDst;
+				bufferInfo.alignment    = 0;
+				bufferInfo.size         = sizeof(triangleIndices);
 
-				indexBuffer = Brainfryer::Buffer::Create(bufferInfo);
+				Brainfryer::BufferInfo stagingBufferInfo {};
+				stagingBufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				stagingBufferInfo.alignment = 0;
+				stagingBufferInfo.size      = sizeof(triangleIndices);
+
+				indexBuffer        = Brainfryer::Buffer::Create(bufferInfo);
+				stagingIndexBuffer = Brainfryer::Buffer::Create(stagingBufferInfo);
+				if (!indexBuffer->initialized() || !stagingIndexBuffer->initialized())
+					return 8;
+
+				void* memory = stagingIndexBuffer->map();
+				std::memcpy(memory, triangleIndices, sizeof(triangleIndices));
+				stagingIndexBuffer->unmap();
+
+				indexBuffer->copyFrom(loadCommandList.get(), { stagingIndexBuffer.get(), 0, sizeof(triangleIndices) });
+				indexBuffer->transition(loadCommandList.get(), Brainfryer::EBufferState::Index);
 			}
-			if (!indexBuffer->initialized())
-				return 7;
-
-			void* memory = vertexBuffer->map();
-			std::memcpy(memory, triangleVertices, sizeof(triangleVertices));
-			vertexBuffer->unmap();
 
 			vertexBufferView.buffer = vertexBuffer.get();
 			vertexBufferView.offset = 0;
 			vertexBufferView.size   = sizeof(triangleVertices);
 			vertexBufferView.stride = 28;
 
-			memory = indexBuffer->map();
-			std::memcpy(memory, indices, sizeof(indices));
-			indexBuffer->unmap();
-
 			indexBufferView.buffer = indexBuffer.get();
 			indexBufferView.offset = 0;
-			indexBufferView.size   = sizeof(indices);
+			indexBufferView.size   = sizeof(triangleIndices);
 			indexBufferView.format = Brainfryer::EFormat::R32_UINT;
 		}
+
+		loadCommandList->end();
+
+		Brainfryer::Context::ExecuteCommandLists({ loadCommandList.get() });
 
 		Brainfryer::Context::WaitForGPU();
 

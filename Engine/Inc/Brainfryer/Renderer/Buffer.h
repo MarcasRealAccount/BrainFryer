@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BufferView.h"
+
 #include <memory>
 
 namespace Brainfryer
@@ -41,8 +43,10 @@ namespace Brainfryer
 	public:
 		virtual ~Buffer() = default;
 
-		virtual void* map()   = 0;
-		virtual void  unmap() = 0;
+		virtual void* map(std::uint64_t readStart = 0, std::uint64_t readSize = 0)                                      = 0;
+		virtual void  unmap(std::uint64_t writeStart = 0, std::uint64_t writeSize = 0, bool explicitWriteRange = false) = 0;
+
+		virtual void copyFrom(CommandList* commandList, BufferView view, std::uint64_t offset = 0) = 0;
 
 		virtual void transition(CommandList* commandList, EBufferState state) = 0;
 

@@ -34,7 +34,8 @@ namespace Brainfryer::DX12
 
 	std::vector<std::unique_ptr<CommandList>> DX12CommandAllocator::allocate(std::size_t numCommandLists)
 	{
-		std::vector<std::unique_ptr<CommandList>> list(numCommandLists);
+		std::vector<std::unique_ptr<CommandList>> list;
+		list.reserve(numCommandLists);
 		for (std::size_t i = 0; i < numCommandLists; ++i)
 			list.emplace_back(std::make_unique<DX12CommandList>(this));
 		return list;
@@ -42,7 +43,8 @@ namespace Brainfryer::DX12
 
 	std::vector<std::unique_ptr<CommandList>> DX12CommandAllocator::allocate(ID3D12Device9* device, std::size_t numCommandLists)
 	{
-		std::vector<std::unique_ptr<CommandList>> list(numCommandLists);
+		std::vector<std::unique_ptr<CommandList>> list;
+		list.reserve(numCommandLists);
 		for (std::size_t i = 0; i < numCommandLists; ++i)
 			list.emplace_back(std::make_unique<DX12CommandList>(this, device));
 		return list;

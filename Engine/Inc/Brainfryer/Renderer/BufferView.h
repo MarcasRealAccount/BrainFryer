@@ -8,6 +8,13 @@ namespace Brainfryer
 {
 	class Buffer;
 
+	struct BufferView
+	{
+		Buffer*       buffer;
+		std::uint64_t offset;
+		std::uint32_t size;
+	};
+
 	struct VertexBufferView
 	{
 		Buffer*       buffer;

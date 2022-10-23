@@ -48,20 +48,29 @@ namespace Brainfryer::DX12
 	{
 	}
 
-	void* DX12Buffer::map()
+	void* DX12Buffer::map(std::uint64_t readStart, std::uint64_t readSize)
 	{
 		void*       addr = nullptr;
-		D3D12_RANGE readRange;
-		readRange.Begin = 0;
-		readRange.End   = 0;
+		D3D12_RANGE readRange {};
+		readRange.Begin = readStart;
+		readRange.End   = readStart + readSize;
 		if (HRVLog(m_Resource->Map(0, &readRange, &addr)))
 			return addr;
 		return nullptr;
 	}
 
-	void DX12Buffer::unmap()
+	void DX12Buffer::unmap(std::uint64_t writeStart, std::uint64_t writeSize, bool explicitWriteRange)
 	{
-		m_Resource->Unmap(0, nullptr);
+		D3D12_RANGE writeRange {};
+		writeRange.Begin = writeStart;
+		writeRange.End   = writeStart + writeSize;
+		m_Resource->Unmap(0, explicitWriteRange ? &writeRange : nullptr);
+	}
+
+	void DX12Buffer::copyFrom(CommandList* commandList, BufferView view, std::uint64_t offset)
+	{
+		auto& cmdList = static_cast<DX12CommandList*>(commandList)->handle();
+		cmdList->CopyBufferRegion(m_Resource.get(), offset, static_cast<DX12Buffer*>(view.buffer)->m_Resource.get(), view.offset, view.size);
 	}
 
 	void DX12Buffer::transition(CommandList* commandList, EBufferState state)

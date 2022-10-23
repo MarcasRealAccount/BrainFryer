@@ -36,8 +36,10 @@ namespace Brainfryer::DX12
 		DX12Buffer(const BufferInfo& info);
 		~DX12Buffer();
 
-		virtual void* map() override;
-		virtual void  unmap() override;
+		virtual void* map(std::uint64_t readStart = 0, std::uint64_t readSize = 0) override;
+		virtual void  unmap(std::uint64_t writeStart = 0, std::uint64_t writeSize = 0, bool explicitWriteRange = false) override;
+
+		virtual void copyFrom(CommandList* commandList, BufferView view, std::uint64_t offset = 0) override;
 
 		virtual void transition(CommandList* commandList, EBufferState state) override;
 

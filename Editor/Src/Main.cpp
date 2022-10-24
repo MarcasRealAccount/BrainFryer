@@ -265,6 +265,7 @@ int safeMain()
 		Brainfryer::Context::WaitForGPU();
 	}
 	Brainfryer::Context::Destroy();
+	return 0;
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)

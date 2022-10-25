@@ -13,7 +13,8 @@ namespace Brainfryer::DX12
 	      m_Size(0),
 	      m_ShaderVisible(info.shaderVisible),
 	      m_SearchStart(0),
-	      m_AllocationMap((m_Capacity + 63) >> 6),
+	      m_AllocationMap(m_Capacity >> 6),
+	      m_RefCounts(m_Capacity),
 	      m_CPUStart({ 0 }),
 	      m_GPUStart({ 0 }),
 	      m_HeapInc(0)
@@ -90,6 +91,7 @@ namespace Brainfryer::DX12
 		desc.Buffer.Flags               = isRaw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
 
 		context->device()->CreateShaderResourceView(static_cast<DX12Buffer*>(view.buffer)->handle().get(), &desc, descriptorHandle);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
 		++m_Size;
 		return DescriptorHeapRef { this, freeHeapIndex };
 	}
@@ -144,8 +146,71 @@ namespace Brainfryer::DX12
 		}
 
 		context->device()->CreateShaderResourceView(static_cast<DX12Image*>(view.image)->handle().get(), &desc, descriptorHandle);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
 		++m_Size;
 		return DescriptorHeapRef { this, freeHeapIndex };
+	}
+
+	std::vector<DescriptorHeapRef> DX12DescriptorHeap::createFrameImageViews(FrameImageView view)
+	{
+		auto context = Context::Get<DX12Context>();
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC desc {};
+		desc.Format                  = DX12Format(view.image->format());
+		desc.ViewDimension           = DX12ImageViewType(view.type);
+		desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING; //D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
+		switch (view.type)
+		{
+		case EImageType::_1D:
+			desc.Texture1D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture1D.MipLevels           = view.mipLevels;
+			desc.Texture1D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_1DArray:
+			desc.Texture1DArray.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture1DArray.MipLevels           = view.mipLevels;
+			desc.Texture1DArray.FirstArraySlice     = view.firstArraySlice;
+			desc.Texture1DArray.ArraySize           = view.arraySize;
+			desc.Texture1DArray.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_2D:
+			desc.Texture2D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture2D.MipLevels           = view.mipLevels;
+			desc.Texture2D.PlaneSlice          = view.planeSlice;
+			desc.Texture2D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_2DArray:
+			desc.Texture2DArray.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture2DArray.MipLevels           = view.mipLevels;
+			desc.Texture2DArray.FirstArraySlice     = view.firstArraySlice;
+			desc.Texture2DArray.ArraySize           = view.arraySize;
+			desc.Texture2DArray.PlaneSlice          = view.planeSlice;
+			desc.Texture2DArray.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_3D:
+			desc.Texture3D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture3D.MipLevels           = view.mipLevels;
+			desc.Texture3D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		}
+
+		auto& images = static_cast<DX12FrameImage*>(view.image)->resources();
+
+		std::vector<DescriptorHeapRef> refs(images.size());
+		for (std::uint32_t i = 0; i < images.size(); ++i)
+		{
+			std::uint32_t freeHeapIndex = findFree();
+			m_SearchStart               = freeHeapIndex >> 6;
+
+			D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = m_CPUStart;
+			descriptorHandle.ptr += freeHeapIndex * m_HeapInc;
+
+			context->device()->CreateShaderResourceView(images[i].get(), &desc, descriptorHandle);
+			m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+			++m_Size;
+			refs[i] = { this, freeHeapIndex };
+		}
+		return refs;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE DX12DescriptorHeap::descriptorHandle(std::uint32_t index) const
@@ -162,7 +227,7 @@ namespace Brainfryer::DX12
 
 		for (std::uint32_t i = m_SearchStart; i < m_AllocationMap.size(); ++i)
 		{
-			std::uint32_t index = Utils::Intrinsics::BitScanReverse64(m_AllocationMap[i]);
+			std::uint32_t index = Utils::Intrinsics::BitScanForward64(m_AllocationMap[i]);
 			if (index != ~0U)
 				return i << 6 | index;
 		}

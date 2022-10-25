@@ -5,7 +5,9 @@
 #include "Brainfryer/Envs/DX12/DX12DescriptorHeap.h"
 #include "Brainfryer/Envs/DX12/DX12Format.h"
 #include "Brainfryer/Envs/DX12/DX12GraphicsPipeline.h"
+#include "Brainfryer/Envs/DX12/DX12Image.h"
 #include "Brainfryer/Envs/DX12/DX12PrimitiveTopology.h"
+#include "Brainfryer/Envs/DX12/DX12RenderTargets.h"
 
 namespace Brainfryer::DX12
 {
@@ -46,6 +48,65 @@ namespace Brainfryer::DX12
 	void DX12CommandList::end()
 	{
 		HRVLT(m_CommandList->Close());
+	}
+
+	void DX12CommandList::bindRenderTargets(RenderTargets* renderTargets, std::uint32_t index)
+	{
+		auto dx12RenderTargets = static_cast<DX12RenderTargets*>(renderTargets);
+		auto rtvStart          = dx12RenderTargets->getRTVStart(index);
+		auto dsvStart          = dx12RenderTargets->getDSVStart(index);
+		m_CommandList->OMSetRenderTargets(renderTargets->colorCount(), &rtvStart, true, renderTargets->hasDepthStencil() ? &dsvStart : nullptr);
+
+		std::uint32_t i = 0;
+		for (auto& color : dx12RenderTargets->colors())
+		{
+			auto& clear = static_cast<DX12FrameImage*>(color.image)->clearValue();
+			if (clear.color[0] < 0)
+			{
+				++i;
+				continue;
+			}
+
+			auto rtv = dx12RenderTargets->getRTV(i, index);
+			m_CommandList->ClearRenderTargetView(rtv, clear.color, 0, nullptr);
+			++i;
+		}
+
+		if (renderTargets->hasDepthStencil())
+		{
+			auto&         depthStencil = dx12RenderTargets->depthStencil();
+			auto&         clear        = static_cast<DX12FrameImage*>(depthStencil.image)->clearValue();
+			std::uint32_t flags        = 0;
+			if (clear.ds.depth >= 0.0f)
+				flags |= D3D12_CLEAR_FLAG_DEPTH;
+			if (clear.ds.stencil >= 0)
+				flags |= D3D12_CLEAR_FLAG_STENCIL;
+
+			if (flags != 0)
+				m_CommandList->ClearDepthStencilView(dx12RenderTargets->getDSVStart(index), static_cast<D3D12_CLEAR_FLAGS>(flags), clear.ds.depth, static_cast<std::uint8_t>(clear.ds.stencil), 0, nullptr);
+		}
+	}
+
+	void DX12CommandList::setViewports(const std::vector<Viewport>& viewports)
+	{
+		std::vector<D3D12_VIEWPORT> vps(viewports.size());
+		for (std::size_t i = 0; i < vps.size(); ++i)
+		{
+			auto& viewport = viewports[i];
+			vps[i]         = { viewport.x, viewport.y, viewport.w, viewport.h, viewport.minDepth, viewport.maxDepth };
+		}
+		m_CommandList->RSSetViewports(static_cast<std::uint32_t>(vps.size()), vps.data());
+	}
+
+	void DX12CommandList::setScissors(const std::vector<Rect>& scissors)
+	{
+		std::vector<D3D12_RECT> scs(scissors.size());
+		for (std::size_t i = 0; i < scs.size(); ++i)
+		{
+			auto& scissor = scissors[i];
+			scs[i]        = { scissor.x, scissor.y, static_cast<std::int32_t>(scissor.w), static_cast<std::int32_t>(scissor.h) };
+		}
+		m_CommandList->RSSetScissorRects(static_cast<std::uint32_t>(scs.size()), scs.data());
 	}
 
 	void DX12CommandList::setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps)

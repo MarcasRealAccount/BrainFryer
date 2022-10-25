@@ -33,6 +33,10 @@ namespace Brainfryer::DX12
 		virtual void begin(GraphicsPipeline* initialPipeline = nullptr) override;
 		virtual void end() override;
 
+		virtual void bindRenderTargets(RenderTargets* renderTargets, std::uint32_t index) override;
+		virtual void setViewports(const std::vector<Viewport>& viewports) override;
+		virtual void setScissors(const std::vector<Rect>& scissors) override;
+
 		virtual void setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps) override;
 		virtual void bindDescriptorTable(std::uint32_t binding, DescriptorHeapRef heapRef) override;
 

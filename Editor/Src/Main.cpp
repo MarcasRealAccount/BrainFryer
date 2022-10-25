@@ -9,6 +9,7 @@
 #include <Brainfryer/Renderer/GraphicsPipeline.h>
 #include <Brainfryer/Renderer/Image.h>
 #include <Brainfryer/Renderer/PipelineLayout.h>
+#include <Brainfryer/Renderer/RenderTargets.h>
 #include <Brainfryer/Renderer/Swapchain.h>
 #include <Brainfryer/Utils/Exception.h>
 #include <Brainfryer/Utils/Log.h>
@@ -16,6 +17,21 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+std::vector<std::uint8_t> CompileShader(DX12::LPCWSTR pFileName, const DX12::D3D_SHADER_MACRO* pDefines, DX12::ID3DInclude* pInclude, DX12::LPCSTR pEntrypoint, DX12::LPCSTR pTarget, DX12::UINT Flags1, DX12::UINT Flags2)
+{
+	DX12::Com<DX12::ID3D10Blob> code;
+	DX12::Com<DX12::ID3D10Blob> errorMsg;
+	if (!Brainfryer::DX12::HRVLog(DX12::D3DCompileFromFile(pFileName, pDefines, pInclude, pEntrypoint, pTarget, Flags1, Flags2, code, errorMsg)))
+	{
+		Brainfryer::Log::GetOrCreateLogger("Editor")->critical("{}", std::string_view { reinterpret_cast<const char*>(errorMsg->GetBufferPointer()),
+		                                                                                reinterpret_cast<const char*>(errorMsg->GetBufferPointer()) + errorMsg->GetBufferSize() });
+		return {};
+	}
+
+	return std::vector<std::uint8_t>(reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()),
+	                                 reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()) + code->GetBufferSize());
+}
 
 int safeMain()
 {
@@ -44,7 +60,8 @@ int safeMain()
 		if (!swapchain->initialized())
 			return 3;
 
-		std::unique_ptr<Brainfryer::PipelineLayout> graphicsPipelineLayout;
+		std::unique_ptr<Brainfryer::PipelineLayout> scenePipelineLayout;
+		std::unique_ptr<Brainfryer::PipelineLayout> blitPipelineLayout;
 		{
 			Brainfryer::PipelineLayoutInfo pipelineLayoutInfo {};
 			pipelineLayoutInfo.flags = Brainfryer::PipelineLayoutFlags::AllowInputAssemblerInputLayout;
@@ -64,42 +81,64 @@ int safeMain()
 			    0,
 			    0,
 			    Brainfryer::EShaderVisibility::Pixel);
-			graphicsPipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
+			scenePipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
+
+			/*Brainfryer::PipelineLayoutInfo pipelineLayoutInfo {};
+			pipelineLayoutInfo.flags = Brainfryer::PipelineLayoutFlags::AllowInputAssemblerInputLayout;
+			pipelineLayoutInfo.parameters.emplace_back(Brainfryer::PipelineLayoutDescriptorTable { { { Brainfryer::EPipelineLayoutDescriptorRangeType::ShaderResourceView, 1, 0, 0, 0, Brainfryer::PipelineLayoutDescriptorRangeFlags::DataStatic } } }, Brainfryer::EShaderVisibility::Pixel);
+			pipelineLayoutInfo.staticSamplers.emplace_back(
+			    Brainfryer::EFilter::Nearest,
+			    Brainfryer::EFilter::Nearest,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    Brainfryer::EImageAddressMode::Wrap,
+			    0.0f,
+			    0,
+			    Brainfryer::EComparisonFunc::Never,
+			    Brainfryer::EBorderColor::TransparentBlack,
+			    0.0f,
+			    1.0f,
+			    0,
+			    0,
+			    Brainfryer::EShaderVisibility::Pixel);*/
+			blitPipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
 		}
-		if (!graphicsPipelineLayout->initialized())
+		if (!scenePipelineLayout->initialized() || !blitPipelineLayout->initialized())
 			return 4;
 
-		std::unique_ptr<Brainfryer::GraphicsPipeline> graphicsPipeline;
+		std::unique_ptr<Brainfryer::GraphicsPipeline> scenePipeline;
+		std::unique_ptr<Brainfryer::GraphicsPipeline> blitPipeline;
 		{
-			Brainfryer::GraphicsPipelineInfo graphicsPipelineInfo {};
-			graphicsPipelineInfo.pipelineLayout = graphicsPipelineLayout.get();
-
-			DX12::Com<DX12::ID3D10Blob> vertexShader;
-			DX12::Com<DX12::ID3D10Blob> pixelShader;
-
 			std::uint32_t compileFlags = 0;
 			if constexpr (Core::s_IsConfigDebug)
 				compileFlags |= DX12::D3DCOMPILE_DEBUG | DX12::D3DCOMPILE_SKIP_OPTIMIZATION;
 
-			DX12::D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, vertexShader, nullptr);
-			DX12::D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, pixelShader, nullptr);
+			Brainfryer::GraphicsPipelineInfo pipelineInfo {};
+			pipelineInfo.pipelineLayout = scenePipelineLayout.get();
 
-			graphicsPipelineInfo.vertexShader.data.resize(vertexShader->GetBufferSize());
-			graphicsPipelineInfo.pixelShader.data.resize(pixelShader->GetBufferSize());
-			std::memcpy(graphicsPipelineInfo.vertexShader.data.data(), vertexShader->GetBufferPointer(), vertexShader->GetBufferSize());
-			std::memcpy(graphicsPipelineInfo.pixelShader.data.data(), pixelShader->GetBufferPointer(), pixelShader->GetBufferSize());
+			pipelineInfo.vertexShader.data = CompileShader(L"scene.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0);
+			pipelineInfo.pixelShader.data  = CompileShader(L"scene.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0);
 
-			graphicsPipelineInfo.inputs.emplace_back("POSITION", 0, Brainfryer::EFormat::R32G32B32_FLOAT, 0, 0, 0);
-			graphicsPipelineInfo.inputs.emplace_back("TEXCOORD", 0, Brainfryer::EFormat::R32G32_FLOAT, 0, 12, 0);
+			pipelineInfo.inputs.emplace_back("POSITION", 0, Brainfryer::EFormat::R32G32B32_FLOAT, 0, 0, 0);
+			pipelineInfo.inputs.emplace_back("TEXCOORD", 0, Brainfryer::EFormat::R32G32_FLOAT, 0, 12, 0);
 
-			graphicsPipelineInfo.primitiveTopology = Brainfryer::EPrimitiveTopology::Triangles;
+			pipelineInfo.primitiveTopology = Brainfryer::EPrimitiveTopology::Triangles;
 
-			graphicsPipelineInfo.renderTargetCount = 1;
-			graphicsPipelineInfo.rtvFormats[0]     = swapchain->format();
+			pipelineInfo.renderTargetCount = 1;
+			pipelineInfo.rtvFormats[0]     = swapchain->format();
 
-			graphicsPipeline = Brainfryer::GraphicsPipeline::Create(graphicsPipelineInfo);
+			scenePipeline = Brainfryer::GraphicsPipeline::Create(pipelineInfo);
+
+			pipelineInfo.vertexShader.data = CompileShader(L"blit.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0);
+			pipelineInfo.pixelShader.data  = CompileShader(L"blit.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0);
+
+			pipelineInfo.inputs.clear();
+			pipelineInfo.inputs.emplace_back("POSITION", 0, Brainfryer::EFormat::R32G32_FLOAT, 0, 0, 0);
+			pipelineInfo.inputs.emplace_back("TEXCOORD", 0, Brainfryer::EFormat::R32G32_FLOAT, 0, 8, 0);
+
+			blitPipeline = Brainfryer::GraphicsPipeline::Create(pipelineInfo);
 		}
-		if (!graphicsPipeline->initialized())
+		if (!scenePipeline->initialized() || !blitPipeline->initialized())
 			return 5;
 
 		std::unique_ptr<Brainfryer::CommandAllocator> commandAllocator;
@@ -118,14 +157,26 @@ int safeMain()
 		loadCommandList->begin(nullptr);
 
 		std::unique_ptr<Brainfryer::Buffer> vertexBuffer;
-		std::unique_ptr<Brainfryer::Buffer> stagingVertexBuffer;
 		std::unique_ptr<Brainfryer::Buffer> indexBuffer;
-		std::unique_ptr<Brainfryer::Buffer> stagingIndexBuffer;
 		std::unique_ptr<Brainfryer::Image>  image;
+		std::unique_ptr<Brainfryer::Buffer> blitVertexBuffer;
+		std::unique_ptr<Brainfryer::Buffer> stagingVertexBuffer;
+		std::unique_ptr<Brainfryer::Buffer> stagingIndexBuffer;
 		std::unique_ptr<Brainfryer::Buffer> stagingImageBuffer;
+		std::unique_ptr<Brainfryer::Buffer> stagingBlitVertexBuffer;
 		Brainfryer::VertexBufferView        vertexBufferView {};
 		Brainfryer::IndexBufferView         indexBufferView {};
+		Brainfryer::VertexBufferView        blitVertexBufferView {};
 		{
+			float blitVertices[] {
+				1.0f, -1.0f, 1.0f, 1.0f,  // 1
+				-1.0f, -1.0f, 0.0f, 1.0f, // 0
+				-1.0f, 1.0f, 0.0f, 0.0f,  // 3
+				1.0f, 1.0f, 1.0f, 0.0f,   // 2
+				1.0f, -1.0f, 1.0f, 1.0f,  // 1
+				-1.0f, 1.0f, 0.0f, 0.0f   // 3
+			};
+
 			float triangleVertices[] {
 				-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
 				0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
@@ -137,6 +188,31 @@ int safeMain()
 				1, 0, 3,
 				2, 1, 3
 			};
+
+			{
+				Brainfryer::BufferInfo bufferInfo {};
+				bufferInfo.heapType     = Brainfryer::EHeapType::Default;
+				bufferInfo.initialState = Brainfryer::BufferState::CopyDst;
+				bufferInfo.alignment    = 0;
+				bufferInfo.size         = sizeof(blitVertices);
+
+				Brainfryer::BufferInfo stagingBufferInfo {};
+				stagingBufferInfo.heapType  = Brainfryer::EHeapType::Upload;
+				stagingBufferInfo.alignment = 0;
+				stagingBufferInfo.size      = sizeof(blitVertices);
+
+				blitVertexBuffer        = Brainfryer::Buffer::Create(bufferInfo);
+				stagingBlitVertexBuffer = Brainfryer::Buffer::Create(stagingBufferInfo);
+				if (!blitVertexBuffer->initialized() || !stagingBlitVertexBuffer->initialized())
+					return 7;
+
+				void* memory = stagingBlitVertexBuffer->map();
+				std::memcpy(memory, blitVertices, sizeof(blitVertices));
+				stagingBlitVertexBuffer->unmap();
+
+				blitVertexBuffer->copyFrom(loadCommandList.get(), { stagingBlitVertexBuffer.get(), 0, sizeof(blitVertices) });
+				blitVertexBuffer->transition(loadCommandList.get(), Brainfryer::BufferState::VertexAndConstant);
+			}
 
 			{
 				Brainfryer::BufferInfo bufferInfo {};
@@ -232,22 +308,59 @@ int safeMain()
 			indexBufferView.offset = 0;
 			indexBufferView.size   = sizeof(triangleIndices);
 			indexBufferView.format = Brainfryer::EFormat::R32_UINT;
+
+			blitVertexBufferView.buffer = blitVertexBuffer.get();
+			blitVertexBufferView.offset = 0;
+			blitVertexBufferView.size   = sizeof(blitVertices);
+			blitVertexBufferView.stride = 16;
 		}
 
+		std::unique_ptr<Brainfryer::RenderTargets> renderTargets;
+		std::unique_ptr<Brainfryer::FrameImage>    renderTarget;
+		{
+			Brainfryer::FrameImageInfo renderTargetInfo {};
+			renderTargetInfo.type         = Brainfryer::EImageType::_2D;
+			renderTargetInfo.format       = Brainfryer::EFormat::R8G8B8A8_UNORM;
+			renderTargetInfo.initialState = Brainfryer::ImageState::RenderTarget;
+			renderTargetInfo.width        = 360;
+			renderTargetInfo.height       = 360;
+			renderTargetInfo.depth        = 1;
+			renderTargetInfo.flags        = Brainfryer::ImageFlags::AllowRenderTarget;
+			renderTargetInfo.clear        = { 0.1f, 0.1f, 0.1f, 1.0f };
+
+			renderTarget = Brainfryer::FrameImage::Create(renderTargetInfo);
+			if (!renderTarget->initialized())
+				return 10;
+
+			Brainfryer::RenderTargetsInfo renderTargetsInfo {};
+			renderTargetsInfo.colorViews.emplace_back(Brainfryer::FrameImageView { renderTarget.get(), renderTarget->type(), 0, 0, 0, 0, 0, 0.0f });
+
+			renderTargets = Brainfryer::RenderTargets::Create(renderTargetsInfo);
+		}
+		if (!renderTargets->initialized())
+			return 10;
+
 		std::unique_ptr<Brainfryer::DescriptorHeap> globalDescriptorHeap;
+		std::vector<Brainfryer::DescriptorHeapRef>  renderTargetDescriptorRefs;
 		Brainfryer::DescriptorHeapRef               imageDescriptorRef;
 		{
 			Brainfryer::DescriptorHeapInfo info {};
 			info.type            = Brainfryer::EDescriptorHeapType::SRV_CBV_UAV;
-			info.capacity        = 1;
+			info.capacity        = renderTarget->imageCount() + 1;
 			info.shaderVisible   = true;
 			globalDescriptorHeap = Brainfryer::DescriptorHeap::Create(info);
 			if (!globalDescriptorHeap->initialized())
-				return 10;
+				return 11;
+
+			Brainfryer::FrameImageView renderTargetView {};
+			renderTargetView.image     = renderTarget.get();
+			renderTargetView.type      = renderTarget->type();
+			renderTargetView.mipLevels = 1;
+			renderTargetDescriptorRefs = globalDescriptorHeap->createFrameImageViews(renderTargetView);
 
 			Brainfryer::ImageView view {};
 			view.image         = image.get();
-			view.type          = Brainfryer::EImageType::_2D;
+			view.type          = image->type();
 			view.mipLevels     = 1;
 			imageDescriptorRef = globalDescriptorHeap->createImageView(view);
 		}
@@ -260,14 +373,17 @@ int safeMain()
 
 		while (!window->requestedClose())
 		{
-			auto commandList = Brainfryer::Context::NextFrame();
+			auto          commandList = Brainfryer::Context::NextFrame();
+			std::uint32_t frameIndex  = Brainfryer::Context::FrameIndex();
 
-			commandList->begin(graphicsPipeline.get());
-
-			swapchain->bind(commandList);
-			swapchain->clear(commandList, 0.1f, 0.1f, 0.1f, 1.0f);
+			commandList->begin(scenePipeline.get());
 
 			commandList->setDescriptorHeaps({ globalDescriptorHeap.get() });
+
+			renderTarget->transition(commandList, frameIndex, Brainfryer::ImageState::RenderTarget);
+			commandList->bindRenderTargets(renderTargets.get(), frameIndex);
+			commandList->setViewports({ Brainfryer::Viewport { 0, 0, static_cast<float>(renderTarget->width()), static_cast<float>(renderTarget->height()), 0.0f, 1.0f } });
+			commandList->setScissors({ Brainfryer::Rect { 0, 0, renderTarget->width(), renderTarget->height() } });
 
 			commandList->bindDescriptorTable(0, imageDescriptorRef);
 
@@ -275,6 +391,17 @@ int safeMain()
 			commandList->setVertexBuffers(0, { vertexBufferView });
 			commandList->setIndexBuffer(indexBufferView);
 			commandList->drawIndexedInstanced(6, 1, 0, 0, 0);
+
+			blitPipeline->bind(commandList);
+
+			renderTarget->transition(commandList, frameIndex, Brainfryer::ImageState::PixelShaderResource);
+			swapchain->bind(commandList);
+			//swapchain->clear(commandList, 0.1f, 0.1f, 0.1f, 1.0f);
+
+			commandList->bindDescriptorTable(0, renderTargetDescriptorRefs[frameIndex]);
+			commandList->setPrimitiveTopology(Brainfryer::EPrimitiveTopology::Triangles);
+			commandList->setVertexBuffers(0, { blitVertexBufferView });
+			commandList->drawInstanced(6, 1, 0, 0);
 
 			swapchain->unbind(commandList);
 

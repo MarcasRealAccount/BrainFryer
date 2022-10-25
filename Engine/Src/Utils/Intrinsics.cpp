@@ -5,16 +5,16 @@ namespace Brainfryer::Utils::Intrinsics
 {
 	extern "C"
 	{
-		unsigned char _BitScanReverse(unsigned long* index, unsigned long mask);
-		unsigned char _BitScanReverse64(unsigned long* index, unsigned long long mask);
+		unsigned char _BitScanForward(unsigned long* index, unsigned long mask);
+		unsigned char _BitScanForward64(unsigned long* index, unsigned long long mask);
 	}
 
-	std::uint32_t BitScanReverse(std::uint32_t value)
+	std::uint32_t BitScanForward(std::uint32_t value)
 	{
 		if constexpr (Core::s_IsToolsetMSVC)
 		{
 			unsigned long index  = 0;
-			auto          result = _BitScanReverse(&index, value);
+			auto          result = _BitScanForward(&index, value);
 			return result ? index : ~0U;
 		}
 		else
@@ -26,12 +26,12 @@ namespace Brainfryer::Utils::Intrinsics
 		}
 	}
 
-	std::uint32_t BitScanReverse64(std::uint64_t value)
+	std::uint32_t BitScanForward64(std::uint64_t value)
 	{
 		if constexpr (Core::s_IsToolsetMSVC)
 		{
 			unsigned long index  = 0;
-			auto          result = _BitScanReverse64(&index, value);
+			auto          result = _BitScanForward64(&index, value);
 			return result ? index : ~0U;
 		}
 		else

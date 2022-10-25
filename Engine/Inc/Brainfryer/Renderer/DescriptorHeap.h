@@ -5,6 +5,7 @@
 #include "ImageView.h"
 
 #include <memory>
+#include <vector>
 
 namespace Brainfryer
 {
@@ -34,8 +35,9 @@ namespace Brainfryer
 		virtual void incRef(std::uint32_t index)      = 0;
 		virtual void decRef(std::uint32_t index)      = 0;
 
-		virtual DescriptorHeapRef createBufferView(BufferView view, std::uint32_t stride = 0, bool isRaw = false) = 0;
-		virtual DescriptorHeapRef createImageView(ImageView view)                                                 = 0;
+		virtual DescriptorHeapRef              createBufferView(BufferView view, std::uint32_t stride = 0, bool isRaw = false) = 0;
+		virtual DescriptorHeapRef              createImageView(ImageView view)                                                 = 0;
+		virtual std::vector<DescriptorHeapRef> createFrameImageViews(FrameImageView view)                                      = 0;
 
 		virtual EDescriptorHeapType type() const          = 0;
 		virtual std::uint32_t       capacity() const      = 0;

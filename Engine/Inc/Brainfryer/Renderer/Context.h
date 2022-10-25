@@ -23,8 +23,10 @@ namespace Brainfryer
 
 		static void ExecuteCommandLists(const std::vector<CommandList*>& commandLists);
 
-		static void         WaitForGPU();
-		static CommandList* NextFrame();
+		static void          WaitForGPU();
+		static CommandList*  NextFrame();
+		static std::uint32_t FrameIndex();
+		static std::uint32_t FrameCount();
 
 		static EContextAPI CurrentAPI();
 

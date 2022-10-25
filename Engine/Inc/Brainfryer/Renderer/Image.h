@@ -40,6 +40,16 @@ namespace Brainfryer
 		static constexpr EImageState ShadingRateSrc         = 0x1000000;
 	}; // namespace ImageState
 
+	union ClearValue
+	{
+		float color[4] { -1.0f, -1.0f, -1.0f, -1.0f };
+		struct DS
+		{
+			float        depth;
+			std::int16_t stencil;
+		} ds;
+	};
+
 	struct ImageInfo
 	{
 	public:
@@ -51,6 +61,21 @@ namespace Brainfryer
 		std::uint16_t height;
 		std::uint16_t depth;
 		EImageFlags   flags;
+		ClearValue    clear = { -1.0f, -1.0f, -1.0f, -1.0f };
+	};
+
+	struct FrameImageInfo
+	{
+	public:
+		EImageType    type;
+		EFormat       format;
+		EImageState   initialState;
+		std::uint32_t alignment;
+		std::uint16_t width;
+		std::uint16_t height;
+		std::uint16_t depth;
+		EImageFlags   flags;
+		ClearValue    clear = { -1.0f, -1.0f, -1.0f, -1.0f };
 	};
 
 	class Image
@@ -73,6 +98,35 @@ namespace Brainfryer
 		virtual std::uint16_t width() const  = 0;
 		virtual std::uint16_t height() const = 0;
 		virtual std::uint16_t depth() const  = 0;
+
+		virtual bool isRenderTarget() const = 0;
+		virtual bool isDepthStencil() const = 0;
+
+		virtual bool initialized() const = 0;
+	};
+
+	// TODO(MarcasRealAccount): Give better name
+	class FrameImage
+	{
+	public:
+		static std::unique_ptr<FrameImage> Create(const FrameImageInfo& info);
+
+	public:
+		virtual ~FrameImage() = default;
+
+		virtual void copyFrom(CommandList* commandList, std::uint32_t index, BufferImageView bufferView, Point3D destOffset = { 0, 0, 0 }, Rect3D bufferRect = { -1, -1, -1, 0, 0, 0 }) = 0;
+
+		virtual void transition(CommandList* commandList, std::uint32_t index, EImageState state) = 0;
+
+		virtual std::uint64_t requiredBufferSize() = 0;
+
+		virtual EImageType    type() const                     = 0;
+		virtual EFormat       format() const                   = 0;
+		virtual EImageState   state(std::uint32_t index) const = 0;
+		virtual std::uint16_t width() const                    = 0;
+		virtual std::uint16_t height() const                   = 0;
+		virtual std::uint16_t depth() const                    = 0;
+		virtual std::uint32_t imageCount() const               = 0;
 
 		virtual bool isRenderTarget() const = 0;
 		virtual bool isDepthStencil() const = 0;

@@ -58,6 +58,20 @@ namespace Brainfryer
 		return nullptr;
 	}
 
+	std::uint32_t Context::FrameIndex()
+	{
+		if (s_CurrentContext)
+			return s_CurrentContext->frameIndex();
+		return 0;
+	}
+
+	std::uint32_t Context::FrameCount()
+	{
+		if (s_CurrentContext)
+			return s_CurrentContext->frameCount();
+		return 0;
+	}
+
 	EContextAPI Context::CurrentAPI()
 	{
 		return s_CurrentContext ? s_CurrentContext->api() : EContextAPI::None;

@@ -71,6 +71,8 @@ namespace Brainfryer::DX12
 		auto& handle() { return m_Resource; }
 		auto& handle() const { return m_Resource; }
 
+		auto& clearValue() const { return m_ClearValue; }
+
 	private:
 		Com<ID3D12Resource2> m_Resource;
 		EImageType           m_Type;
@@ -80,5 +82,49 @@ namespace Brainfryer::DX12
 		std::uint16_t        m_Width;
 		std::uint16_t        m_Height;
 		std::uint16_t        m_Depth;
+		ClearValue           m_ClearValue;
+	};
+
+	class DX12FrameImage : public FrameImage
+	{
+	public:
+		DX12FrameImage(const FrameImageInfo& info);
+		~DX12FrameImage();
+
+		virtual void copyFrom(CommandList* commandList, std::uint32_t index, BufferImageView bufferView, Point3D destOffset = { 0, 0, 0 }, Rect3D bufferRect = { -1, -1, -1, 0, 0, 0 }) override;
+
+		virtual void transition(CommandList* commandList, std::uint32_t index, EImageState state) override;
+
+		virtual std::uint64_t requiredBufferSize() override;
+
+		virtual EImageType    type() const override { return m_Type; }
+		virtual EFormat       format() const override { return m_Format; }
+		virtual EImageState   state(std::uint32_t index) const override { return index < m_States.size() ? m_States[index] : ImageState::Common; }
+		virtual std::uint16_t width() const override { return m_Width; }
+		virtual std::uint16_t height() const override { return m_Height; }
+		virtual std::uint16_t depth() const override { return m_Depth; }
+		virtual std::uint32_t imageCount() const override { return static_cast<std::uint32_t>(m_Resources.size()); }
+
+		virtual bool isRenderTarget() const override { return m_Flags & ImageFlags::AllowRenderTarget; };
+		virtual bool isDepthStencil() const override { return m_Flags & ImageFlags::AllowDepthStencil; };
+
+		virtual bool initialized() const { return !m_Resources.empty(); }
+
+		auto& resources() { return m_Resources; }
+		auto& resources() const { return m_Resources; }
+
+		auto& clearValue() const { return m_ClearValue; }
+
+	private:
+		std::vector<Com<ID3D12Resource2>> m_Resources;
+		std::vector<EImageState>          m_States;
+
+		EImageType    m_Type;
+		EFormat       m_Format;
+		EImageFlags   m_Flags;
+		std::uint16_t m_Width;
+		std::uint16_t m_Height;
+		std::uint16_t m_Depth;
+		ClearValue    m_ClearValue;
 	};
 } // namespace Brainfryer::DX12

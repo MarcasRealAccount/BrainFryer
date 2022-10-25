@@ -31,7 +31,8 @@ namespace Brainfryer::DX12
 	}
 
 	DX12Context::DX12Context()
-	    : m_FrameIndex(1),
+	    : m_DMCCookie(0),
+	      m_FrameIndex(1),
 	      m_FrameEvent(nullptr),
 	      m_FrameCount(2)
 	{

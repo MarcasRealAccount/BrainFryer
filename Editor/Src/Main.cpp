@@ -81,7 +81,7 @@ int safeMain()
 			    0,
 			    0,
 			    Brainfryer::EShaderVisibility::Pixel);
-			scenePipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
+			scenePipelineLayout = Brainfryer::PipelineLayout::Create(pipelineLayoutInfo);
 
 			/*Brainfryer::PipelineLayoutInfo pipelineLayoutInfo {};
 			pipelineLayoutInfo.flags = Brainfryer::PipelineLayoutFlags::AllowInputAssemblerInputLayout;

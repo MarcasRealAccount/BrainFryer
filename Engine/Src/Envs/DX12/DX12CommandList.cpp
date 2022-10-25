@@ -2,6 +2,7 @@
 #include "Brainfryer/Envs/DX12/DX12Buffer.h"
 #include "Brainfryer/Envs/DX12/DX12CommandAllocator.h"
 #include "Brainfryer/Envs/DX12/DX12Context.h"
+#include "Brainfryer/Envs/DX12/DX12DescriptorHeap.h"
 #include "Brainfryer/Envs/DX12/DX12Format.h"
 #include "Brainfryer/Envs/DX12/DX12GraphicsPipeline.h"
 #include "Brainfryer/Envs/DX12/DX12PrimitiveTopology.h"
@@ -45,6 +46,20 @@ namespace Brainfryer::DX12
 	void DX12CommandList::end()
 	{
 		HRVLT(m_CommandList->Close());
+	}
+
+	void DX12CommandList::setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps)
+	{
+		std::vector<ID3D12DescriptorHeap*> hps(heaps.size());
+		for (std::size_t i = 0; i < hps.size(); ++i)
+			hps[i] = static_cast<DX12DescriptorHeap*>(heaps[i])->handle().get();
+		m_CommandList->SetDescriptorHeaps(static_cast<UINT>(hps.size()), hps.data());
+	}
+
+	void DX12CommandList::bindDescriptorTable(std::uint32_t binding, DescriptorHeapRef heapRef)
+	{
+		auto handle = static_cast<DX12DescriptorHeap*>(heapRef.heap())->descriptorHandle(heapRef.index());
+		m_CommandList->SetGraphicsRootDescriptorTable(binding, handle);
 	}
 
 	void DX12CommandList::setPrimitiveTopology(EPrimitiveTopology topology)

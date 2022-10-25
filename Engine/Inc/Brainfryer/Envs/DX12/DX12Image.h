@@ -68,6 +68,9 @@ namespace Brainfryer::DX12
 
 		virtual bool initialized() const { return m_Resource.valid(); }
 
+		auto& handle() { return m_Resource; }
+		auto& handle() const { return m_Resource; }
+
 	private:
 		Com<ID3D12Resource2> m_Resource;
 		EImageType           m_Type;

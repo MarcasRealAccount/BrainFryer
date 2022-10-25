@@ -33,6 +33,9 @@ namespace Brainfryer::DX12
 		virtual void begin(GraphicsPipeline* initialPipeline = nullptr) override;
 		virtual void end() override;
 
+		virtual void setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps) override;
+		virtual void bindDescriptorTable(std::uint32_t binding, DescriptorHeapRef heapRef) override;
+
 		virtual void setPrimitiveTopology(EPrimitiveTopology topology) override;
 		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) override;
 		virtual void setIndexBuffer(IndexBufferView indexBuffer) override;

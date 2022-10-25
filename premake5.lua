@@ -80,6 +80,7 @@ workspace("BrainFryer")
 
 		libs.brainfryer:setupDep()
 		libs.imgui:setupDep()
+		libs.stb:setupDep()
 
 		filter("system:windows")
 			links({ "d3dcompiler.lib" })

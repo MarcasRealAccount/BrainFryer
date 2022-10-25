@@ -34,13 +34,13 @@ namespace Brainfryer
 		Constants,
 		ConstantBuffer,
 		ShaderResourceView,
-		UniformView
+		UnorderedAccess
 	};
 
 	enum class EPipelineLayoutDescriptorRangeType
 	{
 		ShaderResourceView,
-		UniformView,
+		UnorderedAccess,
 		ConstantBuffer,
 		Sampler
 	};

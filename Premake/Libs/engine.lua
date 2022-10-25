@@ -5,7 +5,6 @@ libs.brainfryer = libs.brainfryer or {
 }
 
 require("../ThirdParty/glm")
-require("../ThirdParty/stb")
 require("../ThirdParty/entt")
 require("../ThirdParty/spdlog")
 
@@ -30,7 +29,6 @@ function brainfryer:setup()
 	filter({})
 
 	libs.glm:setupDep()
-	libs.stb:setupDep()
 	libs.entt:setupDep()
 	libs.spdlog:setupDep()
 end
@@ -40,7 +38,6 @@ function brainfryer:setupDep()
 	externalincludedirs({ self.location .. "/Inc/" })
 
 	libs.glm:setupDep()
-	libs.stb:setupDep()
 	libs.entt:setupDep()
 	libs.spdlog:setupDep()
 end

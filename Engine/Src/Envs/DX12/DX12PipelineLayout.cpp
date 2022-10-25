@@ -67,7 +67,7 @@ namespace Brainfryer::DX12
 			}
 			case EPipelineLayoutParameterType::ConstantBuffer:
 			case EPipelineLayoutParameterType::ShaderResourceView:
-			case EPipelineLayoutParameterType::UniformView:
+			case EPipelineLayoutParameterType::UnorderedAccess:
 			{
 				auto& descriptor = std::get<PipelineLayoutDescriptor>(param.value);
 

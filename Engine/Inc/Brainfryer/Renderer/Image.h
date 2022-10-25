@@ -5,6 +5,7 @@
 #include "Brainfryer/Utils/Rect.h"
 #include "BufferView.h"
 #include "Format.h"
+#include "ImageView.h"
 
 #include <memory>
 
@@ -38,15 +39,6 @@ namespace Brainfryer
 		static constexpr EImageState ResolveSrc             = 0x0002000;
 		static constexpr EImageState ShadingRateSrc         = 0x1000000;
 	}; // namespace ImageState
-
-	enum class EImageType
-	{
-		_1D,
-		_1DArray,
-		_2D,
-		_2DArray,
-		_3D
-	};
 
 	struct ImageInfo
 	{

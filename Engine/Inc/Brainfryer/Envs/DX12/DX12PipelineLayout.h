@@ -29,7 +29,7 @@ namespace Brainfryer::DX12
 		case EPipelineLayoutParameterType::Constants: return D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 		case EPipelineLayoutParameterType::ConstantBuffer: return D3D12_ROOT_PARAMETER_TYPE_CBV;
 		case EPipelineLayoutParameterType::ShaderResourceView: return D3D12_ROOT_PARAMETER_TYPE_SRV;
-		case EPipelineLayoutParameterType::UniformView: return D3D12_ROOT_PARAMETER_TYPE_UAV;
+		case EPipelineLayoutParameterType::UnorderedAccess: return D3D12_ROOT_PARAMETER_TYPE_UAV;
 		}
 		return D3D12_ROOT_PARAMETER_TYPE_SRV;
 	}
@@ -39,7 +39,7 @@ namespace Brainfryer::DX12
 		switch (type)
 		{
 		case EPipelineLayoutDescriptorRangeType::ShaderResourceView: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		case EPipelineLayoutDescriptorRangeType::UniformView: return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		case EPipelineLayoutDescriptorRangeType::UnorderedAccess: return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		case EPipelineLayoutDescriptorRangeType::ConstantBuffer: return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		case EPipelineLayoutDescriptorRangeType::Sampler: return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
 		}

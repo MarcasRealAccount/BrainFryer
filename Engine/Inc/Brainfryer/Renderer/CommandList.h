@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BufferView.h"
+#include "DescriptorHeapRef.h"
 #include "PrimitiveTopology.h"
 
 #include <vector>
@@ -27,6 +28,9 @@ namespace Brainfryer
 
 		virtual void begin(GraphicsPipeline* initialPipeline = nullptr) = 0;
 		virtual void end()                                              = 0;
+
+		virtual void setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps)         = 0;
+		virtual void bindDescriptorTable(std::uint32_t binding, DescriptorHeapRef heapRef) = 0;
 
 		virtual void setPrimitiveTopology(EPrimitiveTopology topology)                                        = 0;
 		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) = 0;

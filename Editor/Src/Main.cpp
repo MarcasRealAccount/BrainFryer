@@ -5,6 +5,7 @@
 #include <Brainfryer/Renderer/CommandAllocator.h>
 #include <Brainfryer/Renderer/CommandList.h>
 #include <Brainfryer/Renderer/Context.h>
+#include <Brainfryer/Renderer/DescriptorHeap.h>
 #include <Brainfryer/Renderer/GraphicsPipeline.h>
 #include <Brainfryer/Renderer/Image.h>
 #include <Brainfryer/Renderer/PipelineLayout.h>
@@ -12,6 +13,9 @@
 #include <Brainfryer/Utils/Exception.h>
 #include <Brainfryer/Utils/Log.h>
 #include <Brainfryer/Window/Window.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 int safeMain()
 {
@@ -86,7 +90,7 @@ int safeMain()
 			std::memcpy(graphicsPipelineInfo.pixelShader.data.data(), pixelShader->GetBufferPointer(), pixelShader->GetBufferSize());
 
 			graphicsPipelineInfo.inputs.emplace_back("POSITION", 0, Brainfryer::EFormat::R32G32B32_FLOAT, 0, 0, 0);
-			graphicsPipelineInfo.inputs.emplace_back("COLOR", 0, Brainfryer::EFormat::R32G32B32A32_FLOAT, 0, 12, 0);
+			graphicsPipelineInfo.inputs.emplace_back("TEXCOORD", 0, Brainfryer::EFormat::R32G32_FLOAT, 0, 12, 0);
 
 			graphicsPipelineInfo.primitiveTopology = Brainfryer::EPrimitiveTopology::Triangles;
 
@@ -123,9 +127,9 @@ int safeMain()
 		Brainfryer::IndexBufferView         indexBufferView {};
 		{
 			float triangleVertices[] {
-				0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-				0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-				-0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+				0.0f, 0.25f, 0.0f, 0.5f, 0.0f,
+				0.25f, -0.25f, 0.0f, 1.0f, 1.0f,
+				-0.25f, -0.25f, 0.0f, 0.0f, 1.0f
 			};
 
 			std::uint32_t triangleIndices[] {
@@ -183,19 +187,15 @@ int safeMain()
 			}
 
 			{
-				std::uint8_t imageData[] {
-					0x00, 0x00, 0x00, 0xFF,
-					0xFF, 0xFF, 0xFF, 0xFF,
-					0x00, 0x00, 0x00, 0xFF,
-					0xFF, 0xFF, 0xFF, 0xFF
-				};
+				int  w, h, comps;
+				auto imageRes = stbi_load("SeenSomeShit.png", &w, &h, &comps, 4);
 
 				Brainfryer::ImageInfo imageInfo {};
 				imageInfo.type         = Brainfryer::EImageType::_2D;
 				imageInfo.format       = Brainfryer::EFormat::R8G8B8A8_UNORM;
 				imageInfo.initialState = Brainfryer::ImageState::CopyDst;
-				imageInfo.width        = 2;
-				imageInfo.height       = 2;
+				imageInfo.width        = static_cast<std::uint16_t>(w);
+				imageInfo.height       = static_cast<std::uint16_t>(h);
 				imageInfo.depth        = 1;
 				imageInfo.flags        = Brainfryer::ImageFlags::None;
 
@@ -213,22 +213,41 @@ int safeMain()
 					return 9;
 
 				void* memory = stagingImageBuffer->map();
-				std::memcpy(memory, imageData, sizeof(imageData));
+				std::memcpy(memory, imageRes, w * h * 4);
 				stagingImageBuffer->unmap();
 
-				image->copyFrom(loadCommandList.get(), { stagingImageBuffer.get(), 2, Brainfryer::EFormat::R8G8B8A8_UNORM, 2, 1, 1, 256 });
+				image->copyFrom(loadCommandList.get(), { stagingImageBuffer.get(), 0, Brainfryer::EFormat::R8G8B8A8_UNORM, static_cast<std::uint16_t>(w), static_cast<std::uint16_t>(h), 1, static_cast<std::uint32_t>(w) * 4 });
 				image->transition(loadCommandList.get(), Brainfryer::ImageState::PixelShaderResource);
+				stbi_image_free(imageRes);
 			}
 
 			vertexBufferView.buffer = vertexBuffer.get();
 			vertexBufferView.offset = 0;
 			vertexBufferView.size   = sizeof(triangleVertices);
-			vertexBufferView.stride = 28;
+			vertexBufferView.stride = 20;
 
 			indexBufferView.buffer = indexBuffer.get();
 			indexBufferView.offset = 0;
 			indexBufferView.size   = sizeof(triangleIndices);
 			indexBufferView.format = Brainfryer::EFormat::R32_UINT;
+		}
+
+		std::unique_ptr<Brainfryer::DescriptorHeap> globalDescriptorHeap;
+		Brainfryer::DescriptorHeapRef               imageDescriptorRef;
+		{
+			Brainfryer::DescriptorHeapInfo info {};
+			info.type            = Brainfryer::EDescriptorHeapType::SRV_CBV_UAV;
+			info.capacity        = 1;
+			info.shaderVisible   = true;
+			globalDescriptorHeap = Brainfryer::DescriptorHeap::Create(info);
+			if (!globalDescriptorHeap->initialized())
+				return 10;
+
+			Brainfryer::ImageView view {};
+			view.image         = image.get();
+			view.type          = Brainfryer::EImageType::_2D;
+			view.mipLevels     = 1;
+			imageDescriptorRef = globalDescriptorHeap->createImageView(view);
 		}
 
 		loadCommandList->end();
@@ -245,6 +264,10 @@ int safeMain()
 
 			swapchain->bind(commandList);
 			swapchain->clear(commandList, 0.1f, 0.1f, 0.1f, 1.0f);
+
+			commandList->setDescriptorHeaps({ globalDescriptorHeap.get() });
+
+			commandList->bindDescriptorTable(0, imageDescriptorRef);
 
 			commandList->setPrimitiveTopology(Brainfryer::EPrimitiveTopology::Triangles);
 			commandList->setVertexBuffers(0, { vertexBufferView });

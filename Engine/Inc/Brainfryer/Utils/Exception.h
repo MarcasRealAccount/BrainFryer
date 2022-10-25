@@ -28,6 +28,9 @@ namespace Brainfryer::Utils
 		std::string m_Message;
 		BackTrace   m_BackTrace;
 	};
+
+	BackTrace& LastBackTrace();
+	void       HookThrow();
 } // namespace Brainfryer::Utils
 
 template <>

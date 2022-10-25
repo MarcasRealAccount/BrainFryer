@@ -91,6 +91,8 @@ namespace Brainfryer::Windows
 
 	extern "C"
 	{
+		WIN32API DWORD GetLastError();
+
 		WIN32API int lstrlenW(LPCWSTR lpString);
 
 		WIN32API HLOCAL LocalAlloc(UINT uFlags, SIZE_T uBytes);
@@ -108,7 +110,11 @@ namespace Brainfryer::Windows
 
 		WIN32API HANDLE  GetCurrentProcess();
 		WIN32API HMODULE GetModuleHandleW(LPCWSTR lpModuleName);
+		WIN32API void*   GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 		WIN32API HCURSOR LoadCursorW(HINSTANCE hInstance, LPCWSTR lpCursorName);
+
+		WIN32API BOOL VirtualProtectEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, DWORD* lpflOldProtect);
+		WIN32API BOOL FlushInstructionCache(HANDLE hProcess, LPCVOID lpBaseAddress, SIZE_T dwSize);
 
 		WIN32API HANDLE CreateEventW(SECURITY_ATTRIBUTES* lpEventAttributes, bool bManualReset, bool bInitialState, LPCWSTR lpName);
 		WIN32API DWORD  WaitForSingleObjectEx(HANDLE hHandle, DWORD dwMilliseconds, bool bAlertable);
@@ -142,6 +148,17 @@ namespace Brainfryer::Windows
 
 	static constexpr DWORD LANG_NEUTRAL    = 0x00;
 	static constexpr DWORD SUBLANG_DEFAULT = 0x01;
+
+	static constexpr DWORD PAGE_EXECUTE           = 0x0000'0010;
+	static constexpr DWORD PAGE_EXECUTE_READ      = 0x0000'0020;
+	static constexpr DWORD PAGE_EXECUTE_READWRITE = 0x0000'0040;
+	static constexpr DWORD PAGE_EXECUTE_WRITECOPY = 0x0000'0080;
+	static constexpr DWORD PAGE_NOACCESS          = 0x0000'0001;
+	static constexpr DWORD PAGE_READONLY          = 0x0000'0002;
+	static constexpr DWORD PAGE_READWRITE         = 0x0000'0004;
+	static constexpr DWORD PAGE_WRITECOPY         = 0x0000'0008;
+	static constexpr DWORD PAGE_TARGETS_INVALID   = 0x4000'0000;
+	static constexpr DWORD PAGE_TARGETS_NO_UPDATE = 0x4000'0000;
 
 	static constexpr DWORD INFINITE = 0xFFFF'FFFF;
 

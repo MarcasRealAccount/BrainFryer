@@ -424,6 +424,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
 	try
 	{
+		Brainfryer::Utils::HookThrow();
 		return safeMain();
 	}
 	catch (const Brainfryer::Utils::Exception& exception)
@@ -434,8 +435,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 	}
 	catch (const std::exception& exception)
 	{
-		Brainfryer::Log::Critical("{}", exception.what());
-		Brainfryer::Window::FatalErrorBox(exception.what());
+		auto& backtrace = Brainfryer::Utils::LastBackTrace();
+		if (backtrace.frames().empty())
+			Brainfryer::Log::Critical("{}", exception.what());
+		else
+			Brainfryer::Log::Critical("{}\n{}", exception.what(), backtrace);
+		Brainfryer::Window::FatalErrorBox(exception.what(), "", backtrace);
 		return 0x0000'7FFF;
 	}
 }

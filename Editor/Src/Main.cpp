@@ -127,13 +127,15 @@ int safeMain()
 		Brainfryer::IndexBufferView         indexBufferView {};
 		{
 			float triangleVertices[] {
-				0.0f, 0.25f, 0.0f, 0.5f, 0.0f,
-				0.25f, -0.25f, 0.0f, 1.0f, 1.0f,
-				-0.25f, -0.25f, 0.0f, 0.0f, 1.0f
+				-0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+				0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+				0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+				-0.5f, 0.5f, 0.0f, 0.0f, 0.0f
 			};
 
 			std::uint32_t triangleIndices[] {
-				0, 1, 2
+				1, 0, 3,
+				2, 1, 3
 			};
 
 			{
@@ -272,7 +274,7 @@ int safeMain()
 			commandList->setPrimitiveTopology(Brainfryer::EPrimitiveTopology::Triangles);
 			commandList->setVertexBuffers(0, { vertexBufferView });
 			commandList->setIndexBuffer(indexBufferView);
-			commandList->drawIndexedInstanced(3, 1, 0, 0, 0);
+			commandList->drawIndexedInstanced(6, 1, 0, 0, 0);
 
 			swapchain->unbind(commandList);
 

@@ -213,7 +213,6 @@ namespace Brainfryer::Editor
 
 	void CreateWindow(ImGuiViewport* vp)
 	{
-		RendererBackendData*  bd = GetRendererBackendData();
 		RendererViewportData* vd = new RendererViewportData();
 		vp->RendererUserData     = vd;
 
@@ -243,7 +242,7 @@ namespace Brainfryer::Editor
 		vp->RendererUserData = nullptr;
 	}
 
-	void SetWindowSize(ImGuiViewport* vp, ImVec2 size) {}
+	void SetWindowSize([[maybe_unused]] ImGuiViewport* vp, [[maybe_unused]] ImVec2 size) {}
 
 	void RenderWindow(ImGuiViewport* vp, [[maybe_unused]] void* renderArg)
 	{
@@ -284,7 +283,7 @@ namespace Brainfryer::Editor
 			PipelineLayoutInfo pipelineLayoutInfo {};
 			pipelineLayoutInfo.parameters.emplace_back(PipelineLayoutConstants { 0, 0, 16 }, EShaderVisibility::Vertex);
 			pipelineLayoutInfo.parameters.emplace_back(PipelineLayoutDescriptorTable { { { EPipelineLayoutDescriptorRangeType::ShaderResourceView, 1, 0, 0, 0 } } }, EShaderVisibility::Pixel);
-			pipelineLayoutInfo.staticSamplers.emplace_back(
+			pipelineLayoutInfo.staticSamplers.emplace_back(PipelineLayoutStaticSampler {
 			    EFilter::Linear,
 			    EFilter::Linear,
 			    EImageAddressMode::Wrap,
@@ -298,7 +297,7 @@ namespace Brainfryer::Editor
 			    0.0f,
 			    0,
 			    0,
-			    EShaderVisibility::Pixel);
+			    EShaderVisibility::Pixel });
 			pipelineLayoutInfo.flags |= PipelineLayoutFlags::AllowInputAssemblerInputLayout;
 			bd->pipelineLayout = PipelineLayout::Create(pipelineLayoutInfo);
 			if (!bd->pipelineLayout->initialized())
@@ -313,9 +312,9 @@ namespace Brainfryer::Editor
 		pipelineInfo.pipelineLayout    = bd->pipelineLayout.get();
 		pipelineInfo.vertexShader.data = DX12::CompileShader(L"Shaders/ImGui/ImGui.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0);
 		pipelineInfo.pixelShader.data  = DX12::CompileShader(L"Shaders/ImGui/ImGui.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0);
-		pipelineInfo.inputs.emplace_back("POSITION", 0, EFormat::R32G32_FLOAT, 0, IM_OFFSETOF(ImDrawVert, pos), 0);
-		pipelineInfo.inputs.emplace_back("TEXCOORD", 0, EFormat::R32G32_FLOAT, 0, IM_OFFSETOF(ImDrawVert, uv), 0);
-		pipelineInfo.inputs.emplace_back("COLOR", 0, EFormat::R8G8B8A8_UNORM, 0, IM_OFFSETOF(ImDrawVert, col), 0);
+		pipelineInfo.inputs.emplace_back(GraphicsPipelineInput { "POSITION", 0, EFormat::R32G32_FLOAT, 0, static_cast<std::uint32_t>(IM_OFFSETOF(ImDrawVert, pos)), 0 });
+		pipelineInfo.inputs.emplace_back(GraphicsPipelineInput { "TEXCOORD", 0, EFormat::R32G32_FLOAT, 0, static_cast<std::uint32_t>(IM_OFFSETOF(ImDrawVert, uv)), 0 });
+		pipelineInfo.inputs.emplace_back(GraphicsPipelineInput { "COLOR", 0, EFormat::R8G8B8A8_UNORM, 0, static_cast<std::uint32_t>(IM_OFFSETOF(ImDrawVert, col)), 0 });
 		pipelineInfo.primitiveTopology = EPrimitiveTopology::Triangles;
 		pipelineInfo.windingOrder      = EWindingOrder::CW;
 		pipelineInfo.renderTargetCount = 1;
@@ -436,7 +435,7 @@ namespace Brainfryer::Editor
 			std::memcpy(vertexConstantBuffer.mvp, mvp, sizeof(mvp));
 		}
 
-		commandList->setVertexBuffers(0, { { rvb, 0, static_cast<std::uint32_t>(rib->size()), sizeof(ImDrawVert) } });
+		commandList->setVertexBuffers(0, { { rvb, 0, static_cast<std::uint32_t>(rvb->size()), sizeof(ImDrawVert) } });
 		commandList->setIndexBuffer({ rib, 0, static_cast<std::uint32_t>(rib->size()), sizeof(ImDrawIdx) == 2 ? EFormat::R16_UINT : EFormat::R32_UINT });
 		commandList->setPrimitiveTopology(EPrimitiveTopology::Triangles);
 		bd->pipeline->bind(commandList);

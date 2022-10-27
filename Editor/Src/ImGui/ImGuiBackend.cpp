@@ -1,6 +1,7 @@
 #include "ImGuiBackend.h"
 
-//#include <Brainfryer/Input/Input.h>
+#include <Brainfryer/Input/Devices/Keyboard.h>
+#include <Brainfryer/Input/Devices/Mouse.h>
 #include <Brainfryer/Utils/Exception.h>
 #include <Brainfryer/Window/Window.h>
 
@@ -15,6 +16,8 @@ namespace Brainfryer::Editor
 
 	static void PlatformInit();
 	static void PlatformShutdown();
+	static void UpdateKeyModifiers();
+	static void AddKeyEvent(std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state);
 
 	struct BackendData
 	{
@@ -24,6 +27,11 @@ namespace Brainfryer::Editor
 		bool              mouseTracked       = false;
 		bool              wantUpdateMonitors = false;
 		ImGuiMouseCursor  lastMouseCursor    = ImGuiMouseCursor_COUNT;
+
+		UID focusID;
+		UID mouseButtonID;
+		UID keyID;
+		UID charID;
 	};
 
 	static BackendData* GetBackendData()
@@ -50,6 +58,31 @@ namespace Brainfryer::Editor
 		vp->PlatformHandle = vp->PlatformHandleRaw = bd->window;
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 			PlatformInit();
+
+		bd->focusID = bd->window->e_Focus += []([[maybe_unused]] Window* window, bool focused)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddFocusEvent(focused);
+		};
+
+		bd->mouseButtonID = bd->window->e_MouseButton += []([[maybe_unused]] Window* window, std::uint32_t button, Input::EButtonState state)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddMouseButtonEvent(button, state == Input::EButtonState::Pressed);
+		};
+
+		bd->keyID = bd->window->e_Key += []([[maybe_unused]] Window* window, std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state)
+		{
+			UpdateKeyModifiers();
+
+			AddKeyEvent(keycode, scancode, state);
+		};
+
+		bd->charID = bd->window->e_Char += []([[maybe_unused]] Window* window, std::uint32_t codepoint)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddInputCharacter(codepoint);
+		};
 	}
 
 	void ImGuiBackendShutdown()
@@ -62,6 +95,11 @@ namespace Brainfryer::Editor
 
 		io.BackendPlatformName     = nullptr;
 		io.BackendPlatformUserData = nullptr;
+
+		bd->window->e_Focus -= bd->focusID;
+		bd->window->e_MouseButton -= bd->mouseButtonID;
+		bd->window->e_Key -= bd->keyID;
+		bd->window->e_Char -= bd->charID;
 		delete bd;
 	}
 
@@ -235,6 +273,28 @@ namespace Brainfryer::Editor
 		}
 	}
 
+	static ImGuiKey s_KeycodeToImGuiKeycode[512] {
+		ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_Space, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_Apostrophe, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_Comma, ImGuiKey_Minus, ImGuiKey_Period, ImGuiKey_Slash, ImGuiKey_0, ImGuiKey_1, ImGuiKey_2, ImGuiKey_3, ImGuiKey_4, ImGuiKey_5, ImGuiKey_6, ImGuiKey_7, ImGuiKey_8, ImGuiKey_9, ImGuiKey_None, ImGuiKey_Semicolon, ImGuiKey_None, ImGuiKey_Equal, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_A, ImGuiKey_B, ImGuiKey_C, ImGuiKey_D, ImGuiKey_E, ImGuiKey_F, ImGuiKey_G, ImGuiKey_H, ImGuiKey_I, ImGuiKey_J, ImGuiKey_K, ImGuiKey_L, ImGuiKey_M, ImGuiKey_N, ImGuiKey_O, ImGuiKey_P, ImGuiKey_Q, ImGuiKey_R, ImGuiKey_S, ImGuiKey_T, ImGuiKey_U, ImGuiKey_V, ImGuiKey_W, ImGuiKey_X, ImGuiKey_Y, ImGuiKey_Z, ImGuiKey_LeftBracket, ImGuiKey_Backslash, ImGuiKey_RightBracket, ImGuiKey_None, ImGuiKey_None, ImGuiKey_GraveAccent, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_Escape, ImGuiKey_Enter, ImGuiKey_Tab, ImGuiKey_Backspace, ImGuiKey_Insert, ImGuiKey_Delete, ImGuiKey_RightArrow, ImGuiKey_LeftArrow, ImGuiKey_DownArrow, ImGuiKey_UpArrow, ImGuiKey_PageUp, ImGuiKey_PageDown, ImGuiKey_Home, ImGuiKey_End, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_CapsLock, ImGuiKey_ScrollLock, ImGuiKey_NumLock, ImGuiKey_PrintScreen, ImGuiKey_Pause, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_F1, ImGuiKey_F2, ImGuiKey_F3, ImGuiKey_F4, ImGuiKey_F5, ImGuiKey_F6, ImGuiKey_F7, ImGuiKey_F8, ImGuiKey_F9, ImGuiKey_F10, ImGuiKey_F11, ImGuiKey_F12, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_Keypad0, ImGuiKey_Keypad1, ImGuiKey_Keypad2, ImGuiKey_Keypad3, ImGuiKey_Keypad4, ImGuiKey_Keypad5, ImGuiKey_Keypad6, ImGuiKey_Keypad7, ImGuiKey_Keypad8, ImGuiKey_Keypad9, ImGuiKey_KeypadDecimal, ImGuiKey_KeypadDivide, ImGuiKey_KeypadMultiply, ImGuiKey_KeypadSubtract, ImGuiKey_KeypadAdd, ImGuiKey_KeypadEnter, ImGuiKey_KeypadEqual, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_LeftShift, ImGuiKey_LeftCtrl, ImGuiKey_LeftAlt, ImGuiKey_LeftSuper, ImGuiKey_RightShift, ImGuiKey_RightCtrl, ImGuiKey_RightAlt, ImGuiKey_RightSuper, ImGuiKey_Menu, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None, ImGuiKey_None
+	};
+
+	void UpdateKeyModifiers()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.AddKeyEvent(ImGuiMod_Ctrl, Window::GetKeyState(Input::ButtonIndices::KeyLeftControl) || Window::GetKeyState(Input::ButtonIndices::KeyRightControl));
+		io.AddKeyEvent(ImGuiMod_Shift, Window::GetKeyState(Input::ButtonIndices::KeyLeftShift) || Window::GetKeyState(Input::ButtonIndices::KeyRightShift));
+		io.AddKeyEvent(ImGuiMod_Alt, Window::GetKeyState(Input::ButtonIndices::KeyLeftAlt) || Window::GetKeyState(Input::ButtonIndices::KeyRightAlt));
+		io.AddKeyEvent(ImGuiMod_Super, Window::GetKeyState(Input::ButtonIndices::KeyLeftSuper) || Window::GetKeyState(Input::ButtonIndices::KeyRightSuper));
+	}
+
+	void AddKeyEvent(std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state)
+	{
+		ImGuiKey key = s_KeycodeToImGuiKeycode[keycode];
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.AddKeyEvent(key, state == Input::EButtonState::Pressed || state == Input::EButtonState::Repeated);
+		io.SetKeyEventNativeData(key, keycode, scancode);
+	}
+
 	EWindowFlags GetWindowFlags(ImGuiViewportFlags flags)
 	{
 		EWindowFlags flgs = WindowFlags::None;
@@ -260,7 +320,33 @@ namespace Brainfryer::Editor
 		vd->window                = Window::Create(std::move(specs)).release();
 		vd->ownsWindow            = true;
 		vp->PlatformRequestResize = false;
+		vp->PlatformUserData      = vd;
 		vp->PlatformHandle = vp->PlatformHandleRaw = vd->window;
+
+		vd->window->e_Focus += []([[maybe_unused]] Window* window, bool focused)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddFocusEvent(focused);
+		};
+
+		vd->window->e_MouseButton += []([[maybe_unused]] Window* window, std::uint32_t button, Input::EButtonState state)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddMouseButtonEvent(button, state == Input::EButtonState::Pressed);
+		};
+
+		vd->window->e_Key += []([[maybe_unused]] Window* window, std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state)
+		{
+			UpdateKeyModifiers();
+
+			AddKeyEvent(keycode, scancode, state);
+		};
+
+		vd->window->e_Char += []([[maybe_unused]] Window* window, std::uint32_t codepoint)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddInputCharacter(codepoint);
+		};
 	}
 
 	void DestroyWindow(ImGuiViewport* vp)
@@ -270,7 +356,10 @@ namespace Brainfryer::Editor
 			return;
 		vp->PlatformUserData = vp->PlatformHandle = vp->PlatformHandleRaw = nullptr;
 		if (vd->ownsWindow)
+		{
+			delete vd->window;
 			delete vd;
+		}
 	}
 
 	void UpdateWindow(ImGuiViewport* vp)

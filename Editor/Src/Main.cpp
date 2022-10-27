@@ -26,6 +26,8 @@ namespace Brainfryer::Editor
 {
 	int SafeMain()
 	{
+		Log::GetOrCreateLogger("khjasjhdk")->critical("khjashdjka");
+
 		WindowSpecification specs;
 		specs.title   = "BrainFryer editor";
 		specs.state   = EWindowState::Maximized;
@@ -35,7 +37,7 @@ namespace Brainfryer::Editor
 		if (!window->initialized())
 			return 1;
 
-		if (!Context::SelectBestAPI())
+		if (!Context::SelectSpecificAPI(EContextAPI::DX12))
 		{
 			Window::FatalErrorBox("Failed to select context api");
 			return 2;
@@ -69,6 +71,7 @@ namespace Brainfryer::Editor
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+			io.ConfigWindowsMoveFromTitleBarOnly = true;
 
 			ImGui::StyleColorsDark();
 
@@ -89,8 +92,6 @@ namespace Brainfryer::Editor
 			{
 				auto commandList = Context::NextFrame();
 
-				commandList->begin();
-
 				ImGuiRendererNewFrame();
 				ImGuiBackendNewFrame();
 				ImGui::NewFrame();
@@ -106,11 +107,14 @@ namespace Brainfryer::Editor
 					ImGui::RenderPlatformWindowsDefault();
 				}
 
+				commandList->begin();
+
 				commandList->setDescriptorHeaps({ globalDescriptorHeap.get() });
 				swapchain->bind(commandList);
 				swapchain->clear(commandList, 0.0f, 0.0f, 0.0f, 1.0f);
 				ImGuiRendererDrawData(ImGui::GetDrawData(), commandList);
 				swapchain->unbind(commandList);
+
 				commandList->end();
 
 				Brainfryer::Context::ExecuteCommandLists({ commandList });

@@ -1,4 +1,6 @@
 #include "Envs/DX12/DXCompiler.h"
+#include "ImGui/ImGuiBackend.h"
+#include "ImGui/ImGuiRenderer.h"
 #include "Utils/Core.h"
 #include <Brainfryer/Envs/DX12/DX12Context.h>
 #include <Brainfryer/Renderer/Buffer.h>
@@ -18,32 +20,114 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-std::vector<std::uint8_t> CompileShader(DX12::LPCWSTR pFileName, const DX12::D3D_SHADER_MACRO* pDefines, DX12::ID3DInclude* pInclude, DX12::LPCSTR pEntrypoint, DX12::LPCSTR pTarget, DX12::UINT Flags1, DX12::UINT Flags2)
+#include <imgui.h>
+
+namespace Brainfryer::Editor
 {
-	DX12::Com<DX12::ID3D10Blob> code;
-	DX12::Com<DX12::ID3D10Blob> errorMsg;
-	if (!Brainfryer::DX12::HRVLog(DX12::D3DCompileFromFile(pFileName, pDefines, pInclude, pEntrypoint, pTarget, Flags1, Flags2, code, errorMsg)))
+	int SafeMain()
 	{
-		Brainfryer::Log::GetOrCreateLogger("Editor")->critical("{}", std::string_view { reinterpret_cast<const char*>(errorMsg->GetBufferPointer()),
-		                                                                                reinterpret_cast<const char*>(errorMsg->GetBufferPointer()) + errorMsg->GetBufferSize() });
-		return {};
-	}
+		WindowSpecification specs;
+		specs.title   = "BrainFryer editor";
+		specs.state   = EWindowState::Maximized;
+		specs.visible = false;
 
-	return std::vector<std::uint8_t>(reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()),
-	                                 reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()) + code->GetBufferSize());
-}
+		std::unique_ptr<Window> window = Window::Create(specs);
+		if (!window->initialized())
+			return 1;
 
-int safeMain()
-{
-	Brainfryer::WindowSpecification specs;
-	specs.title = "BrainFryer editor";
-	specs.state = Brainfryer::EWindowState::Maximized;
+		if (!Context::SelectBestAPI())
+		{
+			Window::FatalErrorBox("Failed to select context api");
+			return 2;
+		}
+		{
+			std::unique_ptr<Swapchain> swapchain;
+			{
+				SwapchainInfo swapchainInfo {};
+				swapchainInfo.window      = window.get();
+				swapchainInfo.bufferCount = 3;
 
-	std::unique_ptr<Brainfryer::Window> window = Brainfryer::Window::Create(specs);
-	if (!window->initialized())
-		return 1;
+				swapchain = Swapchain::Create(swapchainInfo);
+			}
+			if (!swapchain->initialized())
+				return 3;
 
-	if (!Brainfryer::Context::SelectBestAPI())
+			std::unique_ptr<Brainfryer::DescriptorHeap> globalDescriptorHeap;
+			{
+				Brainfryer::DescriptorHeapInfo info {};
+				info.type            = Brainfryer::EDescriptorHeapType::SRV_CBV_UAV;
+				info.capacity        = 1;
+				info.shaderVisible   = true;
+				globalDescriptorHeap = Brainfryer::DescriptorHeap::Create(info);
+				if (!globalDescriptorHeap->initialized())
+					return 4;
+			}
+
+			IMGUI_CHECKVERSION();
+			ImGui::CreateContext();
+			ImGuiIO& io = ImGui::GetIO();
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+			ImGui::StyleColorsDark();
+
+			ImGuiStyle& style = ImGui::GetStyle();
+			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			{
+				style.WindowRounding              = 0.0f;
+				style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+			}
+			ImGuiBackendInit(window.get());
+			ImGuiRendererInit(swapchain.get(), globalDescriptorHeap.get());
+
+			bool showDemoWindow = true;
+
+			window->show();
+
+			while (!window->requestedClose())
+			{
+				auto commandList = Context::NextFrame();
+
+				commandList->begin();
+
+				ImGuiRendererNewFrame();
+				ImGuiBackendNewFrame();
+				ImGui::NewFrame();
+
+				if (showDemoWindow)
+					ImGui::ShowDemoWindow(&showDemoWindow);
+
+				ImGui::Render();
+
+				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+				{
+					ImGui::UpdatePlatformWindows();
+					ImGui::RenderPlatformWindowsDefault();
+				}
+
+				commandList->setDescriptorHeaps({ globalDescriptorHeap.get() });
+				swapchain->bind(commandList);
+				swapchain->clear(commandList, 0.0f, 0.0f, 0.0f, 1.0f);
+				ImGuiRendererDrawData(ImGui::GetDrawData(), commandList);
+				swapchain->unbind(commandList);
+				commandList->end();
+
+				Brainfryer::Context::ExecuteCommandLists({ commandList });
+
+				swapchain->present();
+
+				Window::MsgLoop();
+			}
+
+			Brainfryer::Context::WaitForGPU();
+
+			ImGuiRendererShutdown();
+			ImGuiBackendShutdown();
+		}
+		Brainfryer::Context::Destroy();
+
+		/*if (!Brainfryer::Context::SelectBestAPI())
 	{
 		Brainfryer::Window::FatalErrorBox("Failed to select context api");
 		return 2;
@@ -82,26 +166,7 @@ int safeMain()
 			    0,
 			    Brainfryer::EShaderVisibility::Pixel);
 			scenePipelineLayout = Brainfryer::PipelineLayout::Create(pipelineLayoutInfo);
-
-			/*Brainfryer::PipelineLayoutInfo pipelineLayoutInfo {};
-			pipelineLayoutInfo.flags = Brainfryer::PipelineLayoutFlags::AllowInputAssemblerInputLayout;
-			pipelineLayoutInfo.parameters.emplace_back(Brainfryer::PipelineLayoutDescriptorTable { { { Brainfryer::EPipelineLayoutDescriptorRangeType::ShaderResourceView, 1, 0, 0, 0, Brainfryer::PipelineLayoutDescriptorRangeFlags::DataStatic } } }, Brainfryer::EShaderVisibility::Pixel);
-			pipelineLayoutInfo.staticSamplers.emplace_back(
-			    Brainfryer::EFilter::Nearest,
-			    Brainfryer::EFilter::Nearest,
-			    Brainfryer::EImageAddressMode::Wrap,
-			    Brainfryer::EImageAddressMode::Wrap,
-			    Brainfryer::EImageAddressMode::Wrap,
-			    0.0f,
-			    0,
-			    Brainfryer::EComparisonFunc::Never,
-			    Brainfryer::EBorderColor::TransparentBlack,
-			    0.0f,
-			    1.0f,
-			    0,
-			    0,
-			    Brainfryer::EShaderVisibility::Pixel);*/
-			blitPipelineLayout = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
+			blitPipelineLayout  = Brainfryer::PipelineLayout::Create(std::move(pipelineLayoutInfo));
 		}
 		if (!scenePipelineLayout->initialized() || !blitPipelineLayout->initialized())
 			return 4;
@@ -411,21 +476,22 @@ int safeMain()
 
 			swapchain->present();
 
-			window->msgLoop();
+			Brainfryer::Window::MsgLoop();
 		}
 
 		Brainfryer::Context::WaitForGPU();
 	}
-	Brainfryer::Context::Destroy();
-	return 0;
-}
+	Brainfryer::Context::Destroy();*/
+		return 0;
+	}
+} // namespace Brainfryer::Editor
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
 	try
 	{
 		Brainfryer::Utils::HookThrow();
-		return safeMain();
+		return Brainfryer::Editor::SafeMain();
 	}
 	catch (const Brainfryer::Utils::Exception& exception)
 	{

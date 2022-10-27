@@ -15,4 +15,16 @@ namespace Brainfryer
 	public:
 		std::int32_t x, y, z;
 	};
+
+	struct Size
+	{
+	public:
+		std::uint32_t w, h;
+	};
+
+	struct Size3D
+	{
+	public:
+		std::uint32_t w, h, d;
+	};
 } // namespace Brainfryer

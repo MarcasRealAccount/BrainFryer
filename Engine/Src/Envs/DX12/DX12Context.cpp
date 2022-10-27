@@ -100,17 +100,18 @@ namespace Brainfryer::DX12
 		HRVLT(m_Device->CreateCommandQueue(&queueDesc, m_CommandQueue, m_CommandQueue));
 
 		m_CommandAllocators.reserve(m_FrameCount);
-		m_CommandLists.reserve(m_FrameCount);
 		m_FrameValues.resize(m_FrameCount, 0);
 
+		auto cmdLists = std::make_unique<DX12CommandList[]>(m_FrameCount);
 		for (std::uint32_t i = 0; i < m_FrameCount; ++i)
 		{
 			CommandAllocatorInfo allocatorInfo {};
 			allocatorInfo.type = ECommandListType::Direct;
 			auto& allocator    = m_CommandAllocators.emplace_back(m_Device.get(), ECommandListType::Direct);
 
-			m_CommandLists.emplace_back(&allocator, m_Device.get());
+			new (&cmdLists[i]) DX12CommandList(&allocator, m_Device.get());
 		}
+		m_CommandListAllocationMap.insert_or_assign({}, std::move(cmdLists));
 
 		HRVLT(m_Device->CreateFence(m_FrameValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, m_FrameFence, m_FrameFence));
 
@@ -140,6 +141,35 @@ namespace Brainfryer::DX12
 		++m_FrameValues[m_FrameIndex];
 	}
 
+	UID DX12Context::newCMDList()
+	{
+		UID id = UID::Random(0);
+		while (m_CommandListAllocationMap.find(id) != m_CommandListAllocationMap.end())
+			id = UID::Random(0);
+
+		auto cmdLists = std::make_unique<DX12CommandList[]>(m_FrameCount);
+		for (std::uint32_t i = 0; i < m_FrameCount; ++i)
+			new (&cmdLists[i]) DX12CommandList(&m_CommandAllocators[i], m_Device.get());
+		m_CommandListAllocationMap.insert_or_assign(id, std::move(cmdLists));
+		return id;
+	}
+
+	void DX12Context::destroyCMDList(UID id)
+	{
+		auto itr = m_CommandListAllocationMap.find(id);
+		if (itr == m_CommandListAllocationMap.end())
+			return;
+		m_CommandListAllocationMap.erase(itr);
+	}
+
+	CommandList* DX12Context::currentCMDList(UID id)
+	{
+		auto itr = m_CommandListAllocationMap.find(id);
+		if (itr == m_CommandListAllocationMap.end())
+			return nullptr;
+		return &itr->second[m_FrameIndex];
+	}
+
 	CommandList* DX12Context::nextFrame()
 	{
 		m_FrameIndex = (m_FrameIndex + 1) % m_FrameCount;
@@ -156,7 +186,7 @@ namespace Brainfryer::DX12
 		m_FrameValues[m_FrameIndex] = currentValue + 1;
 
 		m_CommandAllocators[m_FrameIndex].reset();
-		return &m_CommandLists[m_FrameIndex];
+		return &m_CommandListAllocationMap[{}][m_FrameIndex];
 	}
 
 	std::uint32_t DX12Context::frameIndex() const

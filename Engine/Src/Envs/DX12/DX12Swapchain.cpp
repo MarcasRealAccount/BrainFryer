@@ -20,7 +20,7 @@ namespace Brainfryer::DX12
 		auto& factory      = context->factory();
 		auto& commandQueue = context->commandQueue();
 
-		m_WindowRect = m_Window->windowRect();
+		m_WindowRect = m_Window->rect();
 
 		// TODO(MarcasRealAccount): Get the correct format for the swapchain
 		m_Format = EFormat::R8G8B8A8_UNORM;
@@ -44,7 +44,7 @@ namespace Brainfryer::DX12
 		Com<IDXGISwapChain1> swapchain;
 		HRVLT(factory->CreateSwapChainForHwnd(
 		    commandQueue.get(),
-		    static_cast<Windows::Win32Window*>(m_Window)->nativeHandle(),
+		    static_cast<Windows::Win32Window*>(m_Window)->handle(),
 		    &swapchainDesc,
 		    nullptr,
 		    nullptr,
@@ -84,7 +84,7 @@ namespace Brainfryer::DX12
 	{
 		auto& commandListHandle = static_cast<DX12CommandList*>(commandList)->handle();
 
-		auto rect = m_Window->windowRect();
+		auto rect = m_Window->rect();
 		if (rect.w != m_WindowRect.w || rect.h != m_WindowRect.h)
 		{
 			auto context = Context::Get<DX12Context>();

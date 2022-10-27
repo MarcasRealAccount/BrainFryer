@@ -55,7 +55,7 @@ namespace Brainfryer::Utils
 		{
 			throw Exception("Hehe", "I know right :>");
 		}
-		catch (const Exception& e)
+		catch ([[maybe_unused]] const Exception& e)
 		{
 		}
 	}

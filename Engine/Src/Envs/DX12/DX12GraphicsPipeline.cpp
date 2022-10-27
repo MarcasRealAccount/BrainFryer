@@ -32,51 +32,53 @@ namespace Brainfryer::DX12
 		desc.StreamOutput.NumStrides       = 0;
 		desc.StreamOutput.RasterizedStream = 0;
 
-		desc.BlendState.AlphaToCoverageEnable  = false;
-		desc.BlendState.IndependentBlendEnable = false;
+		desc.BlendState.AlphaToCoverageEnable  = info.blend.alphaCoverageEnable;
+		desc.BlendState.IndependentBlendEnable = info.blend.independentBlendEnable;
 		for (std::uint8_t i = 0; i < 8; ++i)
 		{
+			auto& rt = info.blend.renderTarget[i];
+
 			auto& renderTarget                 = desc.BlendState.RenderTarget[i];
-			renderTarget.BlendEnable           = false;
-			renderTarget.LogicOpEnable         = false;
-			renderTarget.SrcBlend              = D3D12_BLEND_ZERO;
-			renderTarget.DestBlend             = D3D12_BLEND_ONE;
-			renderTarget.BlendOp               = D3D12_BLEND_OP_ADD;
-			renderTarget.SrcBlendAlpha         = D3D12_BLEND_ZERO;
-			renderTarget.DestBlendAlpha        = D3D12_BLEND_ONE;
-			renderTarget.BlendOpAlpha          = D3D12_BLEND_OP_ADD;
-			renderTarget.LogicOp               = D3D12_LOGIC_OP_CLEAR;
+			renderTarget.BlendEnable           = rt.blendEnable;
+			renderTarget.LogicOpEnable         = rt.logicOpEnable;
+			renderTarget.SrcBlend              = DX12Blend(rt.srcBlend);
+			renderTarget.DestBlend             = DX12Blend(rt.dstBlend);
+			renderTarget.BlendOp               = DX12BlendOp(rt.blendOp);
+			renderTarget.SrcBlendAlpha         = DX12Blend(rt.srcBlendAlpha);
+			renderTarget.DestBlendAlpha        = DX12Blend(rt.dstBlendAlpha);
+			renderTarget.BlendOpAlpha          = DX12BlendOp(rt.blendOpAlpha);
+			renderTarget.LogicOp               = DX12LogicOp(rt.logicOp);
 			renderTarget.RenderTargetWriteMask = 0xF;
 		}
 
 		desc.SampleMask = 0xFFFF'FFFF;
 
 		desc.RasterizerState.FillMode              = D3D12_FILL_MODE_SOLID;
-		desc.RasterizerState.CullMode              = D3D12_CULL_MODE_BACK;
-		desc.RasterizerState.FrontCounterClockwise = false;
-		desc.RasterizerState.DepthBias             = 0;
-		desc.RasterizerState.DepthBiasClamp        = 1.0f;
-		desc.RasterizerState.SlopeScaledDepthBias  = 1.0f;
-		desc.RasterizerState.DepthClipEnable       = false;
+		desc.RasterizerState.CullMode              = D3D12_CULL_MODE_NONE;
+		desc.RasterizerState.FrontCounterClockwise = info.windingOrder == EWindingOrder::CCW ? true : false;
+		desc.RasterizerState.DepthBias             = D3D12_DEFAULT_DEPTH_BIAS;
+		desc.RasterizerState.DepthBiasClamp        = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+		desc.RasterizerState.SlopeScaledDepthBias  = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+		desc.RasterizerState.DepthClipEnable       = true;
 		desc.RasterizerState.MultisampleEnable     = false;
 		desc.RasterizerState.AntialiasedLineEnable = false;
-		desc.RasterizerState.ForcedSampleCount     = 1;
+		desc.RasterizerState.ForcedSampleCount     = 0;
 		desc.RasterizerState.ConservativeRaster    = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
 		desc.DepthStencilState.DepthEnable                  = false;
 		desc.DepthStencilState.DepthWriteMask               = D3D12_DEPTH_WRITE_MASK_ALL;
-		desc.DepthStencilState.DepthFunc                    = D3D12_COMPARISON_FUNC_LESS;
+		desc.DepthStencilState.DepthFunc                    = D3D12_COMPARISON_FUNC_ALWAYS;
 		desc.DepthStencilState.StencilEnable                = false;
 		desc.DepthStencilState.StencilReadMask              = 0xFF;
 		desc.DepthStencilState.StencilWriteMask             = 0xFF;
 		desc.DepthStencilState.FrontFace.StencilFailOp      = D3D12_STENCIL_OP_KEEP;
 		desc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 		desc.DepthStencilState.FrontFace.StencilPassOp      = D3D12_STENCIL_OP_KEEP;
-		desc.DepthStencilState.FrontFace.StencilFunc        = D3D12_COMPARISON_FUNC_LESS;
+		desc.DepthStencilState.FrontFace.StencilFunc        = D3D12_COMPARISON_FUNC_ALWAYS;
 		desc.DepthStencilState.BackFace.StencilFailOp       = D3D12_STENCIL_OP_KEEP;
 		desc.DepthStencilState.BackFace.StencilDepthFailOp  = D3D12_STENCIL_OP_KEEP;
 		desc.DepthStencilState.BackFace.StencilPassOp       = D3D12_STENCIL_OP_KEEP;
-		desc.DepthStencilState.BackFace.StencilFunc         = D3D12_COMPARISON_FUNC_LESS;
+		desc.DepthStencilState.BackFace.StencilFunc         = D3D12_COMPARISON_FUNC_ALWAYS;
 
 		std::vector<D3D12_INPUT_ELEMENT_DESC> inputs(info.inputs.size());
 		for (std::size_t i = 0; i < inputs.size(); ++i)

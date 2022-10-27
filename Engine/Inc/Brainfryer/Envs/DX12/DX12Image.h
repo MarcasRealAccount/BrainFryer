@@ -108,7 +108,7 @@ namespace Brainfryer::DX12
 		virtual bool isRenderTarget() const override { return m_Flags & ImageFlags::AllowRenderTarget; };
 		virtual bool isDepthStencil() const override { return m_Flags & ImageFlags::AllowDepthStencil; };
 
-		virtual bool initialized() const { return !m_Resources.empty(); }
+		virtual bool initialized() const { return !m_Resources.empty() && m_Resources[0].valid(); }
 
 		auto& resources() { return m_Resources; }
 		auto& resources() const { return m_Resources; }

@@ -18,4 +18,18 @@ namespace Brainfryer
 		}
 		return nullptr;
 	}
+
+	std::unique_ptr<FrameBuffer> FrameBuffer::Create(const FrameBufferInfo& info)
+	{
+		switch (Context::CurrentAPI())
+		{
+		case EContextAPI::None: return nullptr;
+		case EContextAPI::DX12:
+			if constexpr (Core::s_IsSystemWindows)
+				return std::make_unique<DX12::DX12FrameBuffer>(info);
+			else
+				return nullptr;
+		}
+		return nullptr;
+	}
 } // namespace Brainfryer

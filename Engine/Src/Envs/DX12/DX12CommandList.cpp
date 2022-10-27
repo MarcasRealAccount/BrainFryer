@@ -11,6 +11,9 @@
 
 namespace Brainfryer::DX12
 {
+	DX12CommandList::DX12CommandList()
+	    : m_Allocator(nullptr) {}
+
 	DX12CommandList::DX12CommandList(DX12CommandAllocator* allocator)
 	    : m_Allocator(allocator)
 	{
@@ -121,6 +124,16 @@ namespace Brainfryer::DX12
 	{
 		auto handle = static_cast<DX12DescriptorHeap*>(heapRef.heap())->descriptorHandle(heapRef.index());
 		m_CommandList->SetGraphicsRootDescriptorTable(binding, handle);
+	}
+
+	void DX12CommandList::bind32BitConstants(std::uint32_t binding, std::uint32_t count, const void* data, std::uint32_t offset)
+	{
+		m_CommandList->SetGraphicsRoot32BitConstants(binding, count, data, offset);
+	}
+
+	void DX12CommandList::setBlendFactor(const float (&factor)[4])
+	{
+		m_CommandList->OMSetBlendFactor(factor);
 	}
 
 	void DX12CommandList::setPrimitiveTopology(EPrimitiveTopology topology)

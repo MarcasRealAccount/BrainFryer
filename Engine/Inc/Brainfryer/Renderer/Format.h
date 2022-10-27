@@ -6,6 +6,7 @@ namespace Brainfryer
 	{
 		Unknown,
 		R8G8B8A8_UNORM,
+		R16_UINT,
 		R32_UINT,
 		R32G32_FLOAT,
 		R32G32B32_FLOAT,

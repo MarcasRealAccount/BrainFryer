@@ -6,32 +6,48 @@
 
 #include <utility>
 
-namespace Brainfryer::Utils
+namespace Brainfryer
 {
-	struct Exception
+	namespace Utils
 	{
-	public:
-		Exception(std::string title, std::string message, BackTrace backTrace = CaptureBackTrace(0, 10))
-		    : m_Title(std::move(title)), m_Message(std::move(message)), m_BackTrace(std::move(backTrace)) {}
-		template <class... Args>
-		Exception(std::string title, fmt::format_string<Args...> format, Args&&... args, BackTrace backTrace = CaptureBackTrace(0, 10))
-		    : m_Title(std::move(title)), m_Message(fmt::format(format, std::forward<Args>(args)...)), m_BackTrace(std::move(backTrace))
+		struct Exception
 		{
-		}
+		public:
+			Exception(std::string title, std::string message, BackTrace backTrace = CaptureBackTrace(0, 10))
+			    : m_Title(std::move(title)), m_Message(std::move(message)), m_BackTrace(std::move(backTrace)) {}
+			template <class... Args>
+			Exception(std::string title, fmt::format_string<Args...> format, Args&&... args, BackTrace backTrace = CaptureBackTrace(0, 10))
+			    : m_Title(std::move(title)), m_Message(fmt::format(format, std::forward<Args>(args)...)), m_BackTrace(std::move(backTrace))
+			{
+			}
 
-		auto& title() const { return m_Title; }
-		auto& what() const { return m_Message; }
-		auto& backTrace() const { return m_BackTrace; }
+			auto& title() const { return m_Title; }
+			auto& what() const { return m_Message; }
+			auto& backTrace() const { return m_BackTrace; }
 
-	private:
-		std::string m_Title;
-		std::string m_Message;
-		BackTrace   m_BackTrace;
-	};
+		private:
+			std::string m_Title;
+			std::string m_Message;
+			BackTrace   m_BackTrace;
+		};
 
-	BackTrace& LastBackTrace();
-	void       HookThrow();
-} // namespace Brainfryer::Utils
+		BackTrace& LastBackTrace();
+		void       HookThrow();
+	} // namespace Utils
+
+	inline void Assert(bool condition, std::string message)
+	{
+		if (!condition)
+			throw Utils::Exception("Assertion", std::move(message), Utils::CaptureBackTrace(1, 10));
+	}
+
+	template <class... Args>
+	void Assert(bool condition, fmt::format_string<Args...> format, Args&&... args)
+	{
+		if (!condition)
+			throw Utils::Exception("Assertion", std::move(format), std::forward<Args>(args)..., Utils::CaptureBackTrace(1, 10));
+	}
+} // namespace Brainfryer
 
 template <>
 struct fmt::formatter<Brainfryer::Utils::Exception>

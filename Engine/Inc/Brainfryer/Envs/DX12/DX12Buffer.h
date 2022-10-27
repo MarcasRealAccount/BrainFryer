@@ -41,8 +41,9 @@ namespace Brainfryer::DX12
 
 		virtual void transition(CommandList* commandList, EBufferState state) override;
 
-		virtual EHeapType    heapType() const override { return m_HeapType; }
-		virtual EBufferState state() const override { return m_State; }
+		virtual EHeapType     heapType() const override { return m_HeapType; }
+		virtual EBufferState  state() const override { return m_State; }
+		virtual std::uint64_t size() const override { return m_Size; }
 
 		virtual bool initialized() const override { return m_Resource.valid(); }
 
@@ -53,5 +54,37 @@ namespace Brainfryer::DX12
 		Com<ID3D12Resource2> m_Resource;
 		EHeapType            m_HeapType;
 		EBufferState         m_State;
+		std::uint64_t        m_Size;
+	};
+
+	class DX12FrameBuffer : public FrameBuffer
+	{
+	public:
+		DX12FrameBuffer(const FrameBufferInfo& info);
+		~DX12FrameBuffer();
+
+		virtual void* map(std::uint32_t index, std::uint64_t readStart = 0, std::uint64_t readSize = 0) override;
+		virtual void  unmap(std::uint32_t index, std::uint64_t writeStart = 0, std::uint64_t writeSize = 0, bool explicitWriteRange = false) override;
+
+		virtual void copyFrom(CommandList* commandList, std::uint32_t index, BufferView view, std::uint64_t offset = 0) override;
+
+		virtual void transition(CommandList* commandList, std::uint32_t index, EBufferState state) override;
+
+		virtual EHeapType     heapType() const override { return m_HeapType; }
+		virtual EBufferState  state(std::uint32_t index) const override { return index < m_States.size() ? m_States[index] : BufferState::Common; }
+		virtual std::uint64_t size() const override { return m_Size; }
+		virtual std::uint32_t bufferCount() const override { return static_cast<std::uint32_t>(m_Resources.size()); }
+
+		virtual bool initialized() const override { return !m_Resources.empty() && m_Resources[0].valid(); }
+
+		auto& resources() { return m_Resources; }
+		auto& resources() const { return m_Resources; }
+
+	private:
+		std::vector<Com<ID3D12Resource2>> m_Resources;
+		std::vector<EBufferState>         m_States;
+
+		EHeapType     m_HeapType;
+		std::uint64_t m_Size;
 	};
 } // namespace Brainfryer::DX12

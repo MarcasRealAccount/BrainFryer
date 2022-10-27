@@ -3,6 +3,7 @@
 #include "Brainfryer/Renderer/Context.h"
 #include "DX12.h"
 
+#include <unordered_map>
 #include <vector>
 
 namespace Brainfryer::DX12
@@ -25,6 +26,9 @@ namespace Brainfryer::DX12
 		virtual void executeCommandLists(const std::vector<CommandList*>& commandLists) override;
 
 		virtual void          waitForGPU() override;
+		virtual UID           newCMDList() override;
+		virtual void          destroyCMDList(UID id) override;
+		virtual CommandList*  currentCMDList(UID id = {}) override;
 		virtual CommandList*  nextFrame() override;
 		virtual std::uint32_t frameIndex() const override;
 		virtual std::uint32_t frameCount() const override;
@@ -48,7 +52,8 @@ namespace Brainfryer::DX12
 		Com<ID3D12CommandQueue> m_CommandQueue;
 
 		std::vector<DX12CommandAllocator> m_CommandAllocators;
-		std::vector<DX12CommandList>      m_CommandLists;
+
+		std::unordered_map<UID, std::unique_ptr<DX12CommandList[]>> m_CommandListAllocationMap;
 
 		std::uint32_t              m_FrameIndex;
 		Com<ID3D12Fence1>          m_FrameFence;

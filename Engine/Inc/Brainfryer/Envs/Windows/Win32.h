@@ -13,8 +13,9 @@ namespace Brainfryer::Windows
 {
 	using namespace Types;
 
-	using WNDPROC = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
-	using DLGPROC = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
+	using WNDPROC         = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
+	using DLGPROC         = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
+	using MONITORENUMPROC = BOOL (*)(HMONITOR, HDC, RECT*, LPARAM);
 
 	using WINDOWPLACEMENT = struct tagWINDOWPLACEMENT
 	{
@@ -89,6 +90,8 @@ namespace Brainfryer::Windows
 		WORD  id;
 	};
 
+	using COLORREF = DWORD;
+
 	extern "C"
 	{
 		WIN32API DWORD GetLastError();
@@ -105,41 +108,55 @@ namespace Brainfryer::Windows
 
 		WIN32API INT_PTR DialogBoxIndirectParamW(HINSTANCE hInstance, const DLGTEMPLATE* lpTemplate, HWND hWndParent, DLGPROC lpDialogFunc, LPARAM dwInitParam);
 		WIN32API LRESULT DefDlgProcW(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
-		WIN32API bool    EndDialog(HWND hDlg, INT_PTR nResult);
+		WIN32API BOOL    EndDialog(HWND hDlg, INT_PTR nResult);
 		WIN32API int     MessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType);
 
 		WIN32API HANDLE  GetCurrentProcess();
 		WIN32API HMODULE GetModuleHandleW(LPCWSTR lpModuleName);
 		WIN32API void*   GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 		WIN32API HCURSOR LoadCursorW(HINSTANCE hInstance, LPCWSTR lpCursorName);
+		WIN32API HCURSOR SetCursor(HCURSOR hCursor);
+		WIN32API HMODULE LoadLibraryW(LPCWSTR lpLibFileName);
+		WIN32API BOOL    FreeLibrary(HMODULE hLibModule);
 
 		WIN32API BOOL VirtualProtectEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, DWORD* lpflOldProtect);
 		WIN32API BOOL FlushInstructionCache(HANDLE hProcess, LPCVOID lpBaseAddress, SIZE_T dwSize);
 
-		WIN32API HANDLE CreateEventW(SECURITY_ATTRIBUTES* lpEventAttributes, bool bManualReset, bool bInitialState, LPCWSTR lpName);
-		WIN32API DWORD  WaitForSingleObjectEx(HANDLE hHandle, DWORD dwMilliseconds, bool bAlertable);
+		WIN32API HANDLE CreateEventW(SECURITY_ATTRIBUTES* lpEventAttributes, BOOL bManualReset, BOOL bInitialState, LPCWSTR lpName);
+		WIN32API DWORD  WaitForSingleObjectEx(HANDLE hHandle, DWORD dwMilliseconds, BOOL bAlertable);
 
 		WIN32API ATOM RegisterClassExW(const WNDCLASSEXW* wndClass);
-		WIN32API bool UnregisterClassW(LPCWSTR lpClassName, HINSTANCE hInstance);
+		WIN32API BOOL UnregisterClassW(LPCWSTR lpClassName, HINSTANCE hInstance);
 
-		WIN32API bool GetMonitorInfoW(HMONITOR hMonitor, MONITORINFO* lpmi);
+		WIN32API BOOL GetMonitorInfoW(HMONITOR hMonitor, MONITORINFO* lpmi);
+		WIN32API BOOL EnumDisplayMonitors(HDC hdc, const RECT* lprcClip, MONITORENUMPROC lpfnEnum, LPARAM dwData);
+
+		WIN32API BOOL ScreenToClient(HWND hWnd, POINT* lpPoint);
+		WIN32API BOOL ClientToScreen(HWND hWnd, POINT* lpPoint);
+		WIN32API BOOL SetCursorPos(int X, int Y);
+		WIN32API BOOL GetCursorPos(POINT* lpPoint);
+		WIN32API HWND WindowFromPoint(POINT Point);
 
 		WIN32API HWND     CreateWindowExW(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam);
-		WIN32API bool     DestroyWindow(HWND hWnd);
-		WIN32API bool     ShowWindow(HWND hWnd, int nCmdShow);
+		WIN32API BOOL     DestroyWindow(HWND hWnd);
+		WIN32API BOOL     ShowWindow(HWND hWnd, int nCmdShow);
 		WIN32API HMONITOR MonitorFromWindow(HWND hWnd, DWORD dwFlags);
-		WIN32API bool     SetPropW(HWND hWnd, LPCWSTR lpString, HANDLE hData);
+		WIN32API BOOL     SetPropW(HWND hWnd, LPCWSTR lpString, HANDLE hData);
 		WIN32API HANDLE   GetPropW(HWND hWnd, LPCWSTR lpString);
 		WIN32API LONG     SetWindowLongW(HWND hWnd, int nIndex, LONG dwNewLong);
 		WIN32API LONG     GetWindowLongW(HWND hWnd, int nIndex);
-		WIN32API bool     SetWindowTextW(HWND hWnd, LPCWSTR lpString);
-		WIN32API bool     SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
-		WIN32API bool     GetWindowPlacement(HWND hWnd, WINDOWPLACEMENT* lpwndpl);
-		WIN32API bool     SetWindowPlacement(HWND hWnd, const WINDOWPLACEMENT* lpwndpl);
-		WIN32API bool     PeekMessageW(MSG* lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
-		WIN32API bool     TranslateMessage(const MSG* lpMsg);
+		WIN32API BOOL     SetWindowTextW(HWND hWnd, LPCWSTR lpString);
+		WIN32API BOOL     SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+		WIN32API BOOL     GetWindowPlacement(HWND hWnd, WINDOWPLACEMENT* lpwndpl);
+		WIN32API BOOL     SetWindowPlacement(HWND hWnd, const WINDOWPLACEMENT* lpwndpl);
+		WIN32API BOOL     PeekMessageW(MSG* lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
+		WIN32API BOOL     TranslateMessage(const MSG* lpMsg);
 		WIN32API LRESULT  DispatchMessageW(const MSG* lpMsg);
 		WIN32API LRESULT  DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+		WIN32API BOOL     BringWindowToTop(HWND hWnd);
+		WIN32API BOOL     SetForegroundWindow(HWND hWnd);
+		WIN32API HWND     SetFocus(HWND hWnd);
+		WIN32API BOOL     SetLayeredWindowAttributes(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
 	}
 
 	static constexpr DWORD FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x0100;
@@ -162,21 +179,46 @@ namespace Brainfryer::Windows
 
 	static constexpr DWORD INFINITE = 0xFFFF'FFFF;
 
-	static LPCWSTR const IDC_ARROW = reinterpret_cast<LPCWSTR const>(32512);
+	static LPCWSTR const IDC_ARROW    = reinterpret_cast<LPCWSTR const>(32512);
+	static LPCWSTR const IDC_HAND     = reinterpret_cast<LPCWSTR const>(32649);
+	static LPCWSTR const IDC_IBEAM    = reinterpret_cast<LPCWSTR const>(32513);
+	static LPCWSTR const IDC_NO       = reinterpret_cast<LPCWSTR const>(32648);
+	static LPCWSTR const IDC_SIZE     = reinterpret_cast<LPCWSTR const>(32640);
+	static LPCWSTR const IDC_SIZEALL  = reinterpret_cast<LPCWSTR const>(32646);
+	static LPCWSTR const IDC_SIZENESW = reinterpret_cast<LPCWSTR const>(32643);
+	static LPCWSTR const IDC_SIZENS   = reinterpret_cast<LPCWSTR const>(32645);
+	static LPCWSTR const IDC_SIZENWSE = reinterpret_cast<LPCWSTR const>(32642);
+	static LPCWSTR const IDC_SIZEWE   = reinterpret_cast<LPCWSTR const>(32644);
 
 	static constexpr int SM_CXSCREEN = 0;
 	static constexpr int SM_CYSCREEN = 1;
 
+	static constexpr DWORD MONITOR_DEFAULTTONULL    = 0x0000'0000;
 	static constexpr DWORD MONITOR_DEFAULTTOPRIMARY = 0x0000'0001;
+	static constexpr DWORD MONITOR_DEFAULTTONEAREST = 0x0000'0002;
 
-	static constexpr int GWL_STYLE = -16;
+	static constexpr int GWL_USERDATA  = -21;
+	static constexpr int GWL_EXSTYLE   = -20;
+	static constexpr int GWL_STYLE     = -16;
+	static constexpr int GWL_ID        = -12;
+	static constexpr int GWL_HINSTANCE = -6;
+	static constexpr int GWL_WNDPROC   = -4;
 
-	static constexpr UINT SWP_NOSIZE         = 0x0001;
-	static constexpr UINT SWP_NOMOVE         = 0x0002;
-	static constexpr UINT SWP_NOZORDER       = 0x0004;
-	static constexpr UINT SWP_FRAMECHANGED   = 0x0020;
-	static constexpr UINT SWP_NOOWNERZORDER  = 0x0200;
-	static constexpr UINT SWP_NOSENDCHANGING = 0x0400;
+	static constexpr DWORD SWP_NOSIZE         = 0x0001;
+	static constexpr DWORD SWP_NOMOVE         = 0x0002;
+	static constexpr DWORD SWP_NOZORDER       = 0x0004;
+	static constexpr DWORD SWP_NOREDRAW       = 0x0008;
+	static constexpr DWORD SWP_NOACTIVATE     = 0x0010;
+	static constexpr DWORD SWP_DRAWFRAME      = 0x0020;
+	static constexpr DWORD SWP_FRAMECHANGED   = 0x0020;
+	static constexpr DWORD SWP_SHOWWINDOW     = 0x0040;
+	static constexpr DWORD SWP_HIDEWINDOW     = 0x0080;
+	static constexpr DWORD SWP_NOCOPYBITS     = 0x0100;
+	static constexpr DWORD SWP_NOOWNERZORDER  = 0x0200;
+	static constexpr DWORD SWP_NOREPOSITION   = 0x0200;
+	static constexpr DWORD SWP_NOSENDCHANGING = 0x0400;
+	static constexpr DWORD SWP_DEFERERASE     = 0x2000;
+	static constexpr DWORD SWP_ASYNCWINDOWPOS = 0x4000;
 
 	static constexpr UINT CS_VREDRAW = 0x0001;
 	static constexpr UINT CS_HREDRAW = 0x0002;
@@ -208,6 +250,34 @@ namespace Brainfryer::Windows
 	static constexpr DWORD WS_POPUPWINDOW      = WS_POPUP | WS_BORDER | WS_SYSMENU;
 	static constexpr DWORD WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 	static constexpr DWORD WS_TILEDWINDOW      = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+
+	static constexpr DWORD WS_EX_ACCEPTFILES         = 0x00000010;
+	static constexpr DWORD WS_EX_APPWINDOW           = 0x00040000;
+	static constexpr DWORD WS_EX_CLIENTEDGE          = 0x00000200;
+	static constexpr DWORD WS_EX_COMPOSITED          = 0x02000000;
+	static constexpr DWORD WS_EX_CONTEXTHELP         = 0x00000400;
+	static constexpr DWORD WS_EX_CONTROLPARENT       = 0x00010000;
+	static constexpr DWORD WS_EX_DLGMODALFRAME       = 0x00000001;
+	static constexpr DWORD WS_EX_LAYERED             = 0x00080000;
+	static constexpr DWORD WS_EX_LAYOUTRTL           = 0x00400000;
+	static constexpr DWORD WS_EX_LEFT                = 0x00000000;
+	static constexpr DWORD WS_EX_LEFTSCROLLBAR       = 0x00004000;
+	static constexpr DWORD WS_EX_LTRREADING          = 0x00000000;
+	static constexpr DWORD WS_EX_MDICHILD            = 0x00000040;
+	static constexpr DWORD WS_EX_NOACTIVATE          = 0x08000000;
+	static constexpr DWORD WS_EX_NOINHERITLAYOUT     = 0x00100000;
+	static constexpr DWORD WS_EX_NOPARENTNOTIFY      = 0x00000004;
+	static constexpr DWORD WS_EX_NOREDIRECTIONBITMAP = 0x00200000;
+	static constexpr DWORD WS_EX_RIGHT               = 0x00001000;
+	static constexpr DWORD WS_EX_RIGHTSCROLLBAR      = 0x00000000;
+	static constexpr DWORD WS_EX_RTLREADING          = 0x00002000;
+	static constexpr DWORD WS_EX_STATICEDGE          = 0x00020000;
+	static constexpr DWORD WS_EX_TOOLWINDOW          = 0x00000080;
+	static constexpr DWORD WS_EX_TOPMOST             = 0x00000008;
+	static constexpr DWORD WS_EX_TRANSPARENT         = 0x00000020;
+	static constexpr DWORD WS_EX_WINDOWEDGE          = 0x00000100;
+	static constexpr DWORD WS_EX_OVERLAPPEDWINDOW    = (WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE);
+	static constexpr DWORD WS_EX_PALETTEWINDOW       = (WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
 
 	static constexpr DWORD DS_ABSALIGN      = 0x0001;
 	static constexpr DWORD DS_SYSMODAL      = 0x0002;
@@ -287,10 +357,18 @@ namespace Brainfryer::Windows
 	static constexpr DWORD SS_WORDELLIPSIS    = 0x0000C000;
 	static constexpr DWORD SS_ELLIPSISMASK    = 0x0000C000;
 
-	static constexpr int SW_HIDE     = 0;
-	static constexpr int SW_NORMAL   = 1;
-	static constexpr int SW_MAXIMIZE = 3;
-	static constexpr int SW_MINIMIZE = 6;
+	static constexpr int SW_HIDE               = 0;
+	static constexpr int SW_NORMAL             = 1;
+	static constexpr int SW_SHOWMINIMIZED      = 2;
+	static constexpr int SW_MAXIMIZE           = 3;
+	static constexpr int SW_SHOWNOACTIVATE     = 4;
+	static constexpr int SW_SHOW               = 5;
+	static constexpr int SW_MINIMIZE           = 6;
+	static constexpr int SW_MINIMIZENOACTIVATE = 7;
+	static constexpr int SW_SHOWNA             = 8;
+	static constexpr int SW_RESTORE            = 9;
+	static constexpr int SW_SHOWDEFAULT        = 10;
+	static constexpr int SW_FORCEMINIMIZE      = 11;
 
 	static constexpr UINT MB_OK = 0x0000;
 
@@ -322,6 +400,14 @@ namespace Brainfryer::Windows
 	static constexpr WPARAM VK_F10 = 0x79;
 	static constexpr WPARAM VK_F11 = 0x7A;
 	static constexpr WPARAM VK_F12 = 0x7B;
+
+	static const HWND HWND_BOTTOM    = reinterpret_cast<HWND>(1);
+	static const HWND HWND_NOTOPMOST = reinterpret_cast<HWND>(-2);
+	static const HWND HWND_TOP       = reinterpret_cast<HWND>(0);
+	static const HWND HWND_TOPMOST   = reinterpret_cast<HWND>(-1);
+
+	static constexpr DWORD LWA_ALPHA    = 0x2;
+	static constexpr DWORD LWA_COLORKEY = 0x1;
 
 	constexpr std::uint32_t LOWORD(LPARAM l)
 	{

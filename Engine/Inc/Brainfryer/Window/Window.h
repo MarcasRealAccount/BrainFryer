@@ -2,6 +2,8 @@
 
 #include "Brainfryer/Utils/BackTrace.h"
 #include "Brainfryer/Utils/Core.h"
+#include "Brainfryer/Utils/Flags.h"
+#include "Brainfryer/Utils/Point.h"
 #include "Brainfryer/Utils/Rect.h"
 
 #include <cstddef>
@@ -12,6 +14,33 @@
 
 namespace Brainfryer
 {
+	struct Monitor;
+
+	using EWindowFlags = Utils::Flags<>;
+
+	namespace WindowFlags
+	{
+		static constexpr EWindowFlags None          = 0x0;
+		static constexpr EWindowFlags NoDecoration  = 0x1;
+		static constexpr EWindowFlags NoTaskBarIcon = 0x2;
+		static constexpr EWindowFlags TopMost       = 0x4;
+		static constexpr EWindowFlags AlphaSupport  = 0x8;
+	} // namespace WindowFlags
+
+	enum class ECursor
+	{
+		Hidden = 0,
+		Arrow,
+		IBeam,
+		SizeAll,
+		SizeWE,
+		SizeNS,
+		SizeNESW,
+		SizeNWSE,
+		Hand,
+		No
+	};
+
 	enum class EWindowState
 	{
 		Normal,
@@ -27,45 +56,64 @@ namespace Brainfryer
 		Rect         rect    = { 1 << 31, 1 << 31, 1280, 720 };
 		EWindowState state   = EWindowState::Normal;
 		bool         visible = true;
+		EWindowFlags flags   = WindowFlags::None;
 	};
 
 	class Window
 	{
 	public:
+		static const std::vector<Monitor>& GetMonitors();
+
+		static Point GetCursorPos();
+		static void  SetCursor(ECursor cursor);
+
+		static Window* GetFocusedWindow();
+		static Window* WindowFromPoint(Point pos);
+
 		static std::unique_ptr<Window> Create(WindowSpecification specs);
-		static void                    FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
+		static void                    MsgLoop();
+
+		static void FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 
 	public:
 		virtual ~Window() = default;
 
-		virtual void msgLoop() = 0;
-
 		virtual void setTitle(std::string title)         = 0;
-		virtual void setWindowRect(Rect rect)            = 0;
+		virtual void setFlags(EWindowFlags flags)        = 0;
+		virtual void setPos(Point pos)                   = 0;
+		virtual void setSize(Size size)                  = 0;
+		virtual void setRect(Rect rect)                  = 0;
 		virtual void restore()                           = 0;
 		virtual void iconify()                           = 0;
 		virtual void maximize()                          = 0;
 		virtual void fullscreen(bool fullsscreen = true) = 0;
 		virtual void hide()                              = 0;
-		virtual void show()                              = 0;
+		virtual void show(bool activate = true)          = 0;
+		virtual void focus()                             = 0;
 		virtual void requestClose(bool request = true)   = 0;
+		virtual void setAlpha(float alpha)               = 0;
 
 		virtual bool             initialized() const    = 0;
 		virtual std::string_view title() const          = 0;
-		virtual Rect             windowRect() const     = 0;
+		virtual EWindowFlags     flags() const          = 0;
+		virtual Point            pos() const            = 0;
+		virtual Size             size() const           = 0;
+		virtual Rect             rect() const           = 0;
 		virtual EWindowState     state() const          = 0;
 		virtual bool             visible() const        = 0;
 		virtual bool             requestedClose() const = 0;
+		virtual bool             focused() const        = 0;
+		virtual float            getDPIScale() const    = 0;
 
-		void setWindowSize(std::uint32_t width, std::uint32_t height)
-		{
-			auto rect = windowRect();
-			setWindowRect({ rect.x, rect.y, width, height });
-		}
-		void setWindowPos(std::int32_t x, std::int32_t y)
-		{
-			auto rect = windowRect();
-			setWindowRect({ x, y, rect.w, rect.h });
-		}
+		virtual Point screenToClient(Point pos) const = 0;
+		virtual void  setCursorPos(Point pos)         = 0;
+	};
+
+	struct Monitor
+	{
+	public:
+		Rect  mainArea;
+		Rect  workArea;
+		float dpiScale;
 	};
 } // namespace Brainfryer

@@ -16,6 +16,16 @@ namespace Brainfryer::Windows
 	public:
 		friend LRESULT Win32WinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
+		static const std::vector<Monitor>& GetMonitors();
+
+		static Point GetCursorPos();
+		static void  SetCursor(ECursor cursor);
+
+		static Window* GetFocusedWindow();
+		static Window* WindowFromPoint(Point pos);
+
+		static void MsgLoop();
+
 		static void FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 		static void HandleLastError(std::string_view functionName);
 
@@ -23,26 +33,37 @@ namespace Brainfryer::Windows
 		Win32Window(WindowSpecification specs);
 		~Win32Window();
 
-		virtual void msgLoop() override;
-
 		virtual void setTitle(std::string title) override;
-		virtual void setWindowRect(Rect rect) override;
+		virtual void setFlags(EWindowFlags flags) override;
+		virtual void setPos(Point pos) override;
+		virtual void setSize(Size size) override;
+		virtual void setRect(Rect rect) override;
 		virtual void restore() override;
 		virtual void iconify() override;
 		virtual void maximize() override;
 		virtual void fullscreen(bool fullscreen = true) override;
 		virtual void hide() override;
-		virtual void show() override;
+		virtual void show(bool activate = true) override;
+		virtual void focus() override;
 		virtual void requestClose(bool request = true) override;
+		virtual void setAlpha(float alpha) override;
 
 		virtual bool             initialized() const override { return !!m_HWnd; }
-		virtual std::string_view title() const override;
-		virtual Rect             windowRect() const override;
-		virtual EWindowState     state() const override;
-		virtual bool             visible() const override;
-		virtual bool             requestedClose() const override;
+		virtual std::string_view title() const override { return m_Specs.title; }
+		virtual EWindowFlags     flags() const override { return m_Specs.flags; }
+		virtual Point            pos() const override { return { m_Specs.rect.x, m_Specs.rect.y }; }
+		virtual Size             size() const override { return { m_Specs.rect.w, m_Specs.rect.h }; }
+		virtual Rect             rect() const override { return m_Specs.rect; }
+		virtual EWindowState     state() const override { return m_Specs.state; }
+		virtual bool             visible() const override { return m_Specs.visible; }
+		virtual bool             requestedClose() const override { return m_RequestedClose; }
+		virtual bool             focused() const override { return m_Focused; }
+		virtual float            getDPIScale() const override { return m_DPIScale; }
 
-		auto  nativeHandle() const { return m_HWnd; }
+		virtual Point screenToClient(Point pos) const override;
+		virtual void  setCursorPos(Point pos) override;
+
+		auto  handle() const { return m_HWnd; }
 		auto& getSpecs() const { return m_Specs; }
 
 	private:
@@ -54,6 +75,8 @@ namespace Brainfryer::Windows
 		HWND            m_HWnd;
 		WINDOWPLACEMENT m_PPlacement;
 
-		bool m_RequestedClose;
+		bool  m_RequestedClose;
+		bool  m_Focused;
+		float m_DPIScale;
 	};
 } // namespace Brainfryer::Windows

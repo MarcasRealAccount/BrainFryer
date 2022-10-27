@@ -154,7 +154,6 @@ namespace Brainfryer::DX12
 		return size;
 	}
 
-
 	DX12FrameImage::DX12FrameImage(const FrameImageInfo& info)
 	    : m_Resources(Context::FrameCount()),
 	      m_States(Context::FrameCount(), info.initialState),
@@ -245,7 +244,7 @@ namespace Brainfryer::DX12
 
 	void DX12FrameImage::copyFrom(CommandList* commandList, std::uint32_t index, BufferImageView bufferView, Point3D destOffset, Rect3D bufferRect)
 	{
-		if (index > m_Resources.size())
+		if (index >= m_Resources.size())
 			return;
 
 		D3D12_TEXTURE_COPY_LOCATION dst {};
@@ -282,7 +281,7 @@ namespace Brainfryer::DX12
 
 	void DX12FrameImage::transition(CommandList* commandList, std::uint32_t index, EImageState state)
 	{
-		if (index > m_Resources.size() || m_States[index] == state)
+		if (index >= m_Resources.size() || m_States[index] == state)
 			return;
 
 		D3D12_RESOURCE_BARRIER barrier {};

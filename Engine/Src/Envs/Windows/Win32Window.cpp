@@ -3,8 +3,20 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#include <algorithm>
+
 namespace Brainfryer::Windows
 {
+	enum class MONITOR_DPI_TYPE
+	{
+		EffectiveDPI = 0,
+		AngularDPI   = 1,
+		RawDPI       = 2,
+		Default      = EffectiveDPI
+	};
+	using HRESULT              = std::int32_t;
+	using PFN_GetDpiForMonitor = HRESULT (*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+
 	LRESULT Win32WinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	{
 		Win32Window* window = reinterpret_cast<Win32Window*>(GetPropW(hWnd, L"BrainFryer"));
@@ -78,16 +90,43 @@ namespace Brainfryer::Windows
 		return DefWindowProcW(hWnd, Msg, wParam, lParam);
 	}
 
-	HINSTANCE GetInstance()
+	static HINSTANCE GetInstance()
 	{
 		return static_cast<HINSTANCE>(GetModuleHandleW(nullptr));
+	}
+
+	static std::vector<Monitor>      s_Monitors;
+	static std::vector<Win32Window*> s_Windows;
+
+	static float GetDPIScaleForMonitor(HMONITOR hMonitor);
+
+	static BOOL EnumMonitorsProc(HMONITOR hMonitor, [[maybe_unused]] HDC hDC, [[maybe_unused]] RECT* rect, [[maybe_unused]] LPARAM lParam)
+	{
+		auto& monitor = s_Monitors.emplace_back();
+
+		MONITORINFOEXW info {};
+		info.cbSize = sizeof(MONITORINFOEXW);
+		if (!GetMonitorInfoW(hMonitor, &info))
+			return true;
+		monitor.dpiScale = GetDPIScaleForMonitor(hMonitor);
+		monitor.mainArea = { info.rcMonitor.left, info.rcMonitor.top, static_cast<std::uint32_t>(info.rcMonitor.right - info.rcMonitor.left), static_cast<std::uint32_t>(info.rcMonitor.bottom - info.rcMonitor.top) };
+		monitor.workArea = { info.rcWork.left, info.rcWork.top, static_cast<std::uint32_t>(info.rcWork.right - info.rcWork.left), static_cast<std::uint32_t>(info.rcWork.bottom - info.rcWork.top) };
+		return true;
+	}
+
+	static void EnumMonitors()
+	{
+		s_Monitors.clear();
+		EnumDisplayMonitors(nullptr, nullptr, &EnumMonitorsProc, 0);
 	}
 
 	static struct Win32ClassRegister
 	{
 	public:
 		Win32ClassRegister()
-		    : m_WndClassAtom(0)
+		    : m_WndClassAtom(0),
+		      m_SHCoreDll(nullptr),
+		      m_GetDPIForMonitor(nullptr)
 		{
 			if constexpr (Core::s_IsSystemWindows)
 			{
@@ -98,7 +137,7 @@ namespace Brainfryer::Windows
 				wndClass.cbClsExtra    = 0;
 				wndClass.cbWndExtra    = 0;
 				wndClass.hInstance     = GetInstance();
-				wndClass.hIcon         = nullptr;
+				wndClass.hIcon         = reinterpret_cast<HICON>(LoadCursorW(nullptr, IDC_ARROW));
 				wndClass.hCursor       = LoadCursorW(nullptr, IDC_ARROW);
 				wndClass.hbrBackground = nullptr;
 				wndClass.lpszMenuName  = nullptr;
@@ -108,6 +147,24 @@ namespace Brainfryer::Windows
 				m_WndClassAtom = RegisterClassExW(&wndClass);
 				if (!m_WndClassAtom)
 					Win32Window::HandleLastError("RegisterClassExW");
+
+				m_SHCoreDll = LoadLibraryW(L"shcore.dll");
+				if (m_SHCoreDll)
+				{
+					m_GetDPIForMonitor = reinterpret_cast<PFN_GetDpiForMonitor>(GetProcAddress(m_SHCoreDll, "GetDpiForMonitor"));
+					if (!m_GetDPIForMonitor)
+					{
+						if (!FreeLibrary(m_SHCoreDll))
+							Win32Window::HandleLastError("FreeLibrary");
+						m_SHCoreDll = nullptr;
+					}
+				}
+				else
+				{
+					Win32Window::HandleLastError("LoadLibraryW");
+				}
+
+				EnumMonitors();
 			}
 		}
 
@@ -115,18 +172,96 @@ namespace Brainfryer::Windows
 		{
 			if constexpr (Core::s_IsSystemWindows)
 			{
-				if (!m_WndClassAtom)
-					return;
+				if (m_SHCoreDll && !FreeLibrary(m_SHCoreDll))
+					Win32Window::HandleLastError("FreeLibrary");
 
-				if (!UnregisterClassW(L"BrainFryerClass", GetInstance()))
+				if (m_WndClassAtom && !UnregisterClassW(L"BrainFryerClass", GetInstance()))
 					Win32Window::HandleLastError("UnregisterClassExW");
 			}
 		}
 
 		bool isRegistered() const { return !!m_WndClassAtom; }
 
-		ATOM m_WndClassAtom;
+		ATOM                 m_WndClassAtom;
+		HINSTANCE            m_SHCoreDll;
+		PFN_GetDpiForMonitor m_GetDPIForMonitor;
 	} s_ClassRegister;
+
+	float GetDPIScaleForMonitor(HMONITOR hMonitor)
+	{
+		if (!s_ClassRegister.m_SHCoreDll)
+			return 1.0f;
+
+		UINT xdpi, ydpi;
+		s_ClassRegister.m_GetDPIForMonitor(hMonitor, MONITOR_DPI_TYPE::EffectiveDPI, &xdpi, &ydpi);
+
+		return xdpi / 96.0f;
+	}
+
+	static LPCWSTR Win32CursorMode(ECursor cursor)
+	{
+		switch (cursor)
+		{
+		case ECursor::Hidden: return nullptr;
+		case ECursor::Arrow: return IDC_ARROW;
+		case ECursor::IBeam: return IDC_IBEAM;
+		case ECursor::SizeAll: return IDC_SIZEALL;
+		case ECursor::SizeWE: return IDC_SIZEWE;
+		case ECursor::SizeNS: return IDC_SIZENS;
+		case ECursor::SizeNESW: return IDC_SIZENESW;
+		case ECursor::SizeNWSE: return IDC_SIZENWSE;
+		case ECursor::Hand: return IDC_HAND;
+		case ECursor::No: return IDC_NO;
+		}
+		return IDC_ARROW;
+	}
+
+	const std::vector<Monitor>& Win32Window::GetMonitors()
+	{
+		return s_Monitors;
+	}
+
+	Point Win32Window::GetCursorPos()
+	{
+		POINT pos;
+		Brainfryer::Windows::GetCursorPos(&pos);
+		return { pos.x, pos.y };
+	}
+
+	void Win32Window::SetCursor(ECursor cursor)
+	{
+		Brainfryer::Windows::SetCursor(LoadCursorW(nullptr, Win32CursorMode(cursor)));
+	}
+
+	Window* Win32Window::GetFocusedWindow()
+	{
+		for (auto window : s_Windows)
+			if (window->focused())
+				return window;
+		return nullptr;
+	}
+
+	Window* Win32Window::WindowFromPoint(Point pos)
+	{
+		HWND hWnd = Brainfryer::Windows::WindowFromPoint(POINT { pos.x, pos.y });
+		for (auto window : s_Windows)
+			if (window->handle() == hWnd)
+				return window;
+		return nullptr;
+	}
+
+	void Win32Window::MsgLoop()
+	{
+		MSG msg {};
+		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT)
+				break;
+
+			TranslateMessage(&msg);
+			DispatchMessageW(&msg);
+		}
+	}
 
 	void Win32Window::FatalErrorBox(std::string_view message, std::string_view title, const Utils::BackTrace& backTrace)
 	{
@@ -167,13 +302,33 @@ namespace Brainfryer::Windows
 		LocalFree(msg);
 	}
 
+	void Win32WindowFlags(EWindowFlags flags, DWORD& dwStyle, DWORD& dwExStyle)
+	{
+		dwStyle   = 0;
+		dwExStyle = 0;
+		if (flags & WindowFlags::NoDecoration)
+			dwStyle |= WS_POPUP;
+		else
+			dwStyle |= WS_OVERLAPPEDWINDOW;
+
+		if (flags & WindowFlags::NoTaskBarIcon)
+			dwExStyle |= WS_EX_TOOLWINDOW;
+		else
+			dwExStyle |= WS_EX_APPWINDOW;
+
+		if (flags & WindowFlags::TopMost)
+			dwExStyle |= WS_EX_TOPMOST;
+	}
+
 	Win32Window::Win32Window(WindowSpecification specs)
 	    : m_Specs(std::move(specs)),
 	      m_PState(m_Specs.state),
 	      m_PPState(EWindowState::Normal),
 	      m_HWnd(nullptr),
 	      m_PPlacement({ sizeof(WINDOWPLACEMENT) }),
-	      m_RequestedClose(false)
+	      m_RequestedClose(false),
+	      m_Focused(false),
+	      m_DPIScale(1.0f)
 	{
 		if (!s_ClassRegister.isRegistered())
 			return;
@@ -185,12 +340,16 @@ namespace Brainfryer::Windows
 		if (y == 1 << 31)
 			y = (GetSystemMetrics(SM_CYSCREEN) - m_Specs.rect.h) >> 1;
 
+		DWORD dwStyle   = 0;
+		DWORD dwExStyle = 0;
+		Win32WindowFlags(m_Specs.flags, dwStyle, dwExStyle);
+
 		std::wstring title = Utils::UTF::ConvertUTF8ToWide(m_Specs.title);
 		m_HWnd             = CreateWindowExW(
-            0,
+            dwExStyle,
             L"BrainFryerClass",
             title.c_str(),
-            WS_OVERLAPPEDWINDOW,
+            dwStyle,
             x,
             y,
             m_Specs.rect.w,
@@ -223,6 +382,11 @@ namespace Brainfryer::Windows
 			fullscreen();
 			break;
 		}
+
+		HMONITOR hMonitor = MonitorFromWindow(m_HWnd, MONITOR_DEFAULTTONEAREST);
+		m_DPIScale        = GetDPIScaleForMonitor(hMonitor);
+
+		s_Windows.emplace_back(this);
 	}
 
 	Win32Window::~Win32Window()
@@ -230,19 +394,8 @@ namespace Brainfryer::Windows
 		if (m_HWnd)
 			DestroyWindow(m_HWnd);
 		m_HWnd = nullptr;
-	}
 
-	void Win32Window::msgLoop()
-	{
-		MSG msg {};
-		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			if (msg.message == WM_QUIT)
-				break;
-
-			TranslateMessage(&msg);
-			DispatchMessageW(&msg);
-		}
+		std::erase(s_Windows, this);
 	}
 
 	void Win32Window::setTitle(std::string title)
@@ -256,7 +409,61 @@ namespace Brainfryer::Windows
 		}
 	}
 
-	void Win32Window::setWindowRect(Rect rect)
+	void Win32Window::setFlags(EWindowFlags flags)
+	{
+		if (!m_HWnd || flags == m_Specs.flags)
+			return;
+
+		DWORD dwStyle   = 0;
+		DWORD dwExStyle = 0;
+		Win32WindowFlags(flags, dwStyle, dwExStyle);
+
+		bool topMostChanged = (m_Specs.flags & WindowFlags::TopMost) != (flags & WindowFlags::TopMost);
+		HWND insertAfter    = topMostChanged ? (flags & WindowFlags::TopMost ? HWND_TOPMOST : HWND_NOTOPMOST) : 0;
+		UINT swpFlag        = topMostChanged ? 0 : SWP_NOZORDER;
+
+		SetWindowLongW(m_HWnd, GWL_STYLE, dwStyle);
+		SetWindowLongW(m_HWnd, GWL_EXSTYLE, dwExStyle);
+		SetWindowPos(m_HWnd, insertAfter, 0, 0, 0, 0, swpFlag | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+		ShowWindow(m_HWnd, SW_SHOWNA);
+	}
+
+	void Win32Window::setPos(Point pos)
+	{
+		m_Specs.rect.x = pos.x;
+		m_Specs.rect.y = pos.y;
+		if (m_HWnd)
+		{
+			std::int32_t x = m_Specs.rect.x;
+			std::int32_t y = m_Specs.rect.y;
+			if (x == 1 << 31)
+				x = (GetSystemMetrics(SM_CXSCREEN) - m_Specs.rect.w) >> 1;
+			if (y == 1 << 31)
+				y = (GetSystemMetrics(SM_CYSCREEN) - m_Specs.rect.h) >> 1;
+
+			SetWindowPos(m_HWnd,
+			             nullptr,
+			             x, y,
+			             0, 0,
+			             SWP_NOSIZE | SWP_NOZORDER | SWP_NOSENDCHANGING);
+		}
+	}
+
+	void Win32Window::setSize(Size size)
+	{
+		m_Specs.rect.w = size.w;
+		m_Specs.rect.h = size.h;
+		if (m_HWnd)
+		{
+			SetWindowPos(m_HWnd,
+			             nullptr,
+			             0, 0,
+			             size.w, size.h,
+			             SWP_NOMOVE | SWP_NOZORDER | SWP_NOSENDCHANGING);
+		}
+	}
+
+	void Win32Window::setRect(Rect rect)
 	{
 		m_Specs.rect = rect;
 		if (m_HWnd)
@@ -384,7 +591,7 @@ namespace Brainfryer::Windows
 			ShowWindow(m_HWnd, SW_HIDE);
 	}
 
-	void Win32Window::show()
+	void Win32Window::show(bool activate)
 	{
 		m_Specs.visible = true;
 		if (m_HWnd)
@@ -392,19 +599,29 @@ namespace Brainfryer::Windows
 			switch (m_PPState)
 			{
 			case EWindowState::Normal:
-				ShowWindow(m_HWnd, SW_NORMAL);
+				ShowWindow(m_HWnd, activate ? SW_NORMAL : SW_SHOWNOACTIVATE);
 				break;
 			case EWindowState::Iconified:
-				ShowWindow(m_HWnd, SW_MINIMIZE);
+				ShowWindow(m_HWnd, activate ? SW_MINIMIZE : SW_MINIMIZENOACTIVATE);
 				break;
 			case EWindowState::Maximized:
 				ShowWindow(m_HWnd, SW_MAXIMIZE);
 				break;
 			case EWindowState::Fullscreen:
-				ShowWindow(m_HWnd, SW_NORMAL);
+				ShowWindow(m_HWnd, activate ? SW_NORMAL : SW_SHOWNOACTIVATE);
 				break;
 			}
 		}
+	}
+
+	void Win32Window::focus()
+	{
+		if (!m_HWnd)
+			return;
+
+		BringWindowToTop(m_HWnd);
+		SetForegroundWindow(m_HWnd);
+		SetFocus(m_HWnd);
 	}
 
 	void Win32Window::requestClose(bool request)
@@ -412,28 +629,35 @@ namespace Brainfryer::Windows
 		m_RequestedClose = request;
 	}
 
-	std::string_view Win32Window::title() const
+	void Win32Window::setAlpha(float alpha)
 	{
-		return m_Specs.title;
+		if (!(m_Specs.flags & WindowFlags::AlphaSupport))
+			return;
+
+		if (alpha < 1.0f)
+		{
+			DWORD style = GetWindowLongW(m_HWnd, GWL_EXSTYLE) | WS_EX_LAYERED;
+			SetWindowLongW(m_HWnd, GWL_EXSTYLE, style);
+			SetLayeredWindowAttributes(m_HWnd, 0, static_cast<BYTE>(255 * alpha), LWA_ALPHA);
+		}
+		else
+		{
+			DWORD style = GetWindowLongW(m_HWnd, GWL_EXSTYLE) & ~WS_EX_LAYERED;
+			SetWindowLongW(m_HWnd, GWL_EXSTYLE, style);
+		}
 	}
 
-	Rect Win32Window::windowRect() const
+	Point Win32Window::screenToClient(Point pos) const
 	{
-		return m_Specs.rect;
+		POINT point { pos.x, pos.y };
+		ScreenToClient(m_HWnd, &point);
+		return { point.x, point.y };
 	}
 
-	EWindowState Win32Window::state() const
+	void Win32Window::setCursorPos(Point pos)
 	{
-		return m_Specs.state;
-	}
-
-	bool Win32Window::visible() const
-	{
-		return m_Specs.visible;
-	}
-
-	bool Win32Window::requestedClose() const
-	{
-		return m_RequestedClose;
+		POINT point { pos.x, pos.y };
+		ClientToScreen(m_HWnd, &point);
+		SetCursorPos(point.x, point.y);
 	}
 } // namespace Brainfryer::Windows

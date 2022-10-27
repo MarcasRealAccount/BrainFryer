@@ -51,6 +51,26 @@ namespace Brainfryer
 			s_CurrentContext->waitForGPU();
 	}
 
+	UID Context::NewCMDList()
+	{
+		if (s_CurrentContext)
+			return s_CurrentContext->newCMDList();
+		return {};
+	}
+
+	void Context::DestroyCMDList(UID id)
+	{
+		if (s_CurrentContext)
+			s_CurrentContext->destroyCMDList(id);
+	}
+
+	CommandList* Context::CurrentCMDList(UID id)
+	{
+		if (s_CurrentContext)
+			return s_CurrentContext->currentCMDList(id);
+		return nullptr;
+	}
+
 	CommandList* Context::NextFrame()
 	{
 		if (s_CurrentContext)

@@ -25,6 +25,7 @@ namespace Brainfryer::DX12
 	class DX12CommandList : public CommandList
 	{
 	public:
+		DX12CommandList();
 		DX12CommandList(DX12CommandAllocator* allocator);
 		DX12CommandList(DX12CommandAllocator* allocator, ID3D12Device9* device);
 		DX12CommandList(DX12CommandList&& move) noexcept;
@@ -39,7 +40,9 @@ namespace Brainfryer::DX12
 
 		virtual void setDescriptorHeaps(const std::vector<DescriptorHeap*>& heaps) override;
 		virtual void bindDescriptorTable(std::uint32_t binding, DescriptorHeapRef heapRef) override;
+		virtual void bind32BitConstants(std::uint32_t binding, std::uint32_t count, const void* data, std::uint32_t offset) override;
 
+		virtual void setBlendFactor(const float (&factor)[4]) override;
 		virtual void setPrimitiveTopology(EPrimitiveTopology topology) override;
 		virtual void setVertexBuffers(std::uint32_t startIndex, const std::vector<VertexBufferView>& buffers) override;
 		virtual void setIndexBuffer(IndexBufferView indexBuffer) override;

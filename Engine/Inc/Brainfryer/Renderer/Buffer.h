@@ -38,6 +38,15 @@ namespace Brainfryer
 		std::uint64_t size;
 	};
 
+	struct FrameBufferInfo
+	{
+	public:
+		EHeapType     heapType;
+		EBufferState  initialState; // Unused if heapType == EHeapType.Upload;
+		std::uint64_t alignment;
+		std::uint64_t size;
+	};
+
 	class Buffer
 	{
 	public:
@@ -53,8 +62,32 @@ namespace Brainfryer
 
 		virtual void transition(CommandList* commandList, EBufferState state) = 0;
 
-		virtual EHeapType    heapType() const = 0;
-		virtual EBufferState state() const    = 0;
+		virtual EHeapType     heapType() const = 0;
+		virtual EBufferState  state() const    = 0;
+		virtual std::uint64_t size() const     = 0;
+
+		virtual bool initialized() const = 0;
+	};
+
+	class FrameBuffer
+	{
+	public:
+		static std::unique_ptr<FrameBuffer> Create(const FrameBufferInfo& info);
+
+	public:
+		virtual ~FrameBuffer() = default;
+
+		virtual void* map(std::uint32_t index, std::uint64_t readStart = 0, std::uint64_t readSize = 0)                                      = 0;
+		virtual void  unmap(std::uint32_t index, std::uint64_t writeStart = 0, std::uint64_t writeSize = 0, bool explicitWriteRange = false) = 0;
+
+		virtual void copyFrom(CommandList* commandList, std::uint32_t index, BufferView view, std::uint64_t offset = 0) = 0;
+
+		virtual void transition(CommandList* commandList, std::uint32_t index, EBufferState state) = 0;
+
+		virtual EHeapType     heapType() const                 = 0;
+		virtual EBufferState  state(std::uint32_t index) const = 0;
+		virtual std::uint64_t size() const                     = 0;
+		virtual std::uint32_t bufferCount() const              = 0;
 
 		virtual bool initialized() const = 0;
 	};

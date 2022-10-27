@@ -1,14 +1,15 @@
 #pragma once
 
 #include "Utils/Core.h"
+#include <Brainfryer/Utils/Log.h>
 
 #include <Brainfryer/Envs/DX12/DX12.h>
 
 #include <cstdint>
 
-namespace DX12
+namespace Brainfryer::Editor::DX12
 {
-	using namespace Brainfryer::DX12;
+	using namespace ::Brainfryer::DX12;
 
 	enum D3DCOMPILER_STRIP_FLAGS
 	{
@@ -129,4 +130,19 @@ namespace DX12
 		HRESULT D3DDecompressShaders(LPCVOID pSrcData, SIZE_T SrcDataSize, UINT uNumShaders, UINT uStartIndex, UINT* pIndices, UINT uFlags, ID3DBlob** ppShaders, UINT* pTotalShaders);
 		HRESULT D3DDisassemble10Effect(struct ID3D10Effect* pEffect, UINT Flags, ID3DBlob** ppDisassembly);
 	}
-} // namespace DX12
+
+	inline std::vector<std::uint8_t> CompileShader(LPCWSTR pFileName, const D3D_SHADER_MACRO* pDefines, ID3DInclude* pInclude, LPCSTR pEntrypoint, LPCSTR pTarget, UINT Flags1, UINT Flags2)
+	{
+		Com<ID3D10Blob> code;
+		Com<ID3D10Blob> errorMsg;
+		if (!HRVLog(D3DCompileFromFile(pFileName, pDefines, pInclude, pEntrypoint, pTarget, Flags1, Flags2, code, errorMsg)))
+		{
+			Log::GetOrCreateLogger("Editor")->critical("{}", std::string_view { reinterpret_cast<const char*>(errorMsg->GetBufferPointer()),
+			                                                                    reinterpret_cast<const char*>(errorMsg->GetBufferPointer()) + errorMsg->GetBufferSize() });
+			return {};
+		}
+
+		return std::vector<std::uint8_t>(reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()),
+		                                 reinterpret_cast<const std::uint8_t*>(code->GetBufferPointer()) + code->GetBufferSize());
+	}
+} // namespace Brainfryer::Editor::DX12

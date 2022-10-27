@@ -6,6 +6,7 @@
 #include <Brainfryer/Window/Window.h>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <spdlog/fmt/fmt.h>
 
 #include <chrono>
@@ -26,7 +27,6 @@ namespace Brainfryer::Editor
 		Clock::time_point time               = Clock::now();
 		bool              mouseTracked       = false;
 		bool              wantUpdateMonitors = false;
-		ImGuiMouseCursor  lastMouseCursor    = ImGuiMouseCursor_COUNT;
 
 		UID focusID;
 		UID mouseButtonID;
@@ -105,7 +105,6 @@ namespace Brainfryer::Editor
 
 	static void UpdateMonitors();
 	static void UpdateMouseData();
-	static void UpdateMouseCursor();
 
 	void ImGuiBackendNewFrame()
 	{
@@ -123,13 +122,6 @@ namespace Brainfryer::Editor
 		bd->time         = currentTime;
 
 		UpdateMouseData();
-
-		ImGuiMouseCursor mouseCursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
-		if (bd->lastMouseCursor != mouseCursor)
-		{
-			bd->lastMouseCursor = mouseCursor;
-			UpdateMouseCursor();
-		}
 	}
 
 	static EWindowFlags GetWindowFlags(ImGuiViewportFlags flags);
@@ -214,6 +206,24 @@ namespace Brainfryer::Editor
 		bd->wantUpdateMonitors = false;
 	}
 
+	static ECursor GetWindowCursor(ImGuiMouseCursor cursor)
+	{
+		switch (cursor)
+		{
+		case ImGuiMouseCursor_None: return ECursor::Hidden;
+		case ImGuiMouseCursor_Arrow: return ECursor::Arrow;
+		case ImGuiMouseCursor_TextInput: return ECursor::IBeam;
+		case ImGuiMouseCursor_ResizeAll: return ECursor::SizeAll;
+		case ImGuiMouseCursor_ResizeEW: return ECursor::SizeWE;
+		case ImGuiMouseCursor_ResizeNS: return ECursor::SizeNS;
+		case ImGuiMouseCursor_ResizeNESW: return ECursor::SizeNESW;
+		case ImGuiMouseCursor_ResizeNWSE: return ECursor::SizeNWSE;
+		case ImGuiMouseCursor_Hand: return ECursor::Hand;
+		case ImGuiMouseCursor_NotAllowed: return ECursor::No;
+		}
+		return ECursor::Arrow;
+	}
+
 	void UpdateMouseData()
 	{
 		BackendData* bd = GetBackendData();
@@ -236,41 +246,22 @@ namespace Brainfryer::Editor
 			}
 		}
 
-		ImGuiID mouseViewportID = 0;
+		ImGuiViewport* mouseViewport   = nullptr;
+		ImGuiID        mouseViewportID = 0;
 		if (Window* hoveredWindow = Window::WindowFromPoint(mouseScreenPos))
-			if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(hoveredWindow))
-				mouseViewportID = viewport->ID;
+			if (mouseViewport = ImGui::FindViewportByPlatformHandle(hoveredWindow))
+				mouseViewportID = mouseViewport->ID;
 		io.AddMouseViewportEvent(mouseViewportID);
-	}
 
-	void UpdateMouseCursor()
-	{
-		ImGuiIO& io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
 			return;
 
-		ImGuiMouseCursor imguiCursor = ImGui::GetMouseCursor();
-		if (imguiCursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
-		{
-			Window::SetCursor(ECursor::Hidden);
-		}
-		else
-		{
-			ECursor cursor = ECursor::Arrow;
-			switch (imguiCursor)
-			{
-			case ImGuiMouseCursor_Arrow: cursor = ECursor::Arrow; break;
-			case ImGuiMouseCursor_TextInput: cursor = ECursor::IBeam; break;
-			case ImGuiMouseCursor_ResizeAll: cursor = ECursor::SizeAll; break;
-			case ImGuiMouseCursor_ResizeEW: cursor = ECursor::SizeWE; break;
-			case ImGuiMouseCursor_ResizeNS: cursor = ECursor::SizeNS; break;
-			case ImGuiMouseCursor_ResizeNESW: cursor = ECursor::SizeNESW; break;
-			case ImGuiMouseCursor_ResizeNWSE: cursor = ECursor::SizeNWSE; break;
-			case ImGuiMouseCursor_Hand: cursor = ECursor::Hand; break;
-			case ImGuiMouseCursor_NotAllowed: cursor = ECursor::No; break;
-			}
-			Window::SetCursor(cursor);
-		}
+		if (!mouseViewport)
+			mouseViewport = ImGui::GetMainViewport();
+		ECursor       mouseCursor = GetWindowCursor(io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor());
+		ViewportData* vd          = GetViewportData(mouseViewport);
+		if (vd->window->getCursor() != mouseCursor)
+			vd->window->setCursor(mouseCursor);
 	}
 
 	static ImGuiKey s_KeycodeToImGuiKeycode[512] {

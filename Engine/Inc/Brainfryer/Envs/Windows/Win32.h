@@ -449,7 +449,9 @@ namespace Brainfryer::Windows
 	static constexpr UINT WM_KILLFOCUS     = 0x0008;
 	static constexpr UINT WM_CLOSE         = 0x0010;
 	static constexpr UINT WM_QUIT          = 0x0012;
+	static constexpr UINT WM_SETCURSOR     = 0x0020;
 	static constexpr UINT WM_SETFONT       = 0x0030;
+	static constexpr UINT WM_NCHITTEST     = 0x0084;
 	static constexpr UINT WM_INPUT         = 0x00FF;
 	static constexpr UINT WM_KEYDOWN       = 0x0100;
 	static constexpr UINT WM_KEYUP         = 0x0101;
@@ -553,6 +555,33 @@ namespace Brainfryer::Windows
 
 	static constexpr DWORD XBUTTON1 = 0x0001;
 	static constexpr DWORD XBUTTON2 = 0x0002;
+
+	static constexpr INT HTBORDER      = 18;
+	static constexpr INT HTBOTTOM      = 15;
+	static constexpr INT HTBOTTOMLEFT  = 16;
+	static constexpr INT HTBOTTOMRIGHT = 17;
+	static constexpr INT HTCAPTION     = 2;
+	static constexpr INT HTCLIENT      = 1;
+	static constexpr INT HTCLOSE       = 20;
+	static constexpr INT HTERROR       = -2;
+	static constexpr INT HTGROWBOX     = 4;
+	static constexpr INT HTHELP        = 21;
+	static constexpr INT HTHSCROLL     = 6;
+	static constexpr INT HTLEFT        = 10;
+	static constexpr INT HTMENU        = 5;
+	static constexpr INT HTMAXBUTTON   = 9;
+	static constexpr INT HTMINBUTTON   = 8;
+	static constexpr INT HTNOWHERE     = 0;
+	static constexpr INT HTREDUCE      = 8;
+	static constexpr INT HTRIGHT       = 11;
+	static constexpr INT HTSIZE        = 4;
+	static constexpr INT HTSYSMENU     = 3;
+	static constexpr INT HTTOP         = 12;
+	static constexpr INT HTTOPLEFT     = 13;
+	static constexpr INT HTTOPRIGHT    = 14;
+	static constexpr INT HTTRANSPARENT = -1;
+	static constexpr INT HTVSCROLL     = 7;
+	static constexpr INT HTZOOM        = 9;
 
 	constexpr std::int32_t LOWORD(LPARAM l)
 	{

@@ -27,12 +27,6 @@ namespace Brainfryer
 			return { 0, 0 };
 	}
 
-	void Window::SetCursor(ECursor cursor)
-	{
-		if constexpr (Core::s_IsSystemWindows)
-			return Windows::Win32Window::SetCursor(cursor);
-	}
-
 	Window* Window::GetFocusedWindow()
 	{
 		if constexpr (Core::s_IsSystemWindows)

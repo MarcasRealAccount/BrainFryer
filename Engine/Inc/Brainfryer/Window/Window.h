@@ -77,7 +77,6 @@ namespace Brainfryer
 		static bool GetKeyState(std::uint32_t keycode);
 
 		static Point GetCursorPos();
-		static void  SetCursor(ECursor cursor);
 
 		static Window* GetFocusedWindow();
 		static Window* WindowFromPoint(Point pos);
@@ -105,6 +104,7 @@ namespace Brainfryer
 		virtual void requestClose(bool request = true)   = 0;
 		virtual void setAlpha(float alpha)               = 0;
 		virtual void setCursorMode(ECursorMode mode)     = 0;
+		virtual void setCursor(ECursor cursor)           = 0;
 
 		virtual bool             initialized() const    = 0;
 		virtual std::string_view title() const          = 0;
@@ -118,6 +118,7 @@ namespace Brainfryer
 		virtual bool             focused() const        = 0;
 		virtual float            getDPIScale() const    = 0;
 		virtual ECursorMode      getCursorMode() const  = 0;
+		virtual ECursor          getCursor() const      = 0;
 
 		virtual Point screenToClient(Point pos) const = 0;
 		virtual void  setCursorPos(Point pos)         = 0;

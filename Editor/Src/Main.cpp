@@ -96,8 +96,25 @@ namespace Brainfryer::Editor
 				ImGuiBackendNewFrame();
 				ImGui::NewFrame();
 
+				ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+				ImGui::SetNextWindowPos(MainViewport->Pos);
+				ImGui::SetNextWindowSize(MainViewport->Size);
+				ImGui::SetNextWindowViewport(MainViewport->ID);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+
+				ImGuiWindowFlags DockspaceWindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+				ImGui::Begin("MainDockspaceWindow", nullptr, DockspaceWindowFlags);
+				ImGui::PopStyleVar(3);
+
+				ImGui::DockSpace(ImGui::GetID("MainDockspace"));
+
 				if (showDemoWindow)
 					ImGui::ShowDemoWindow(&showDemoWindow);
+
+				ImGui::End();
 
 				ImGui::Render();
 

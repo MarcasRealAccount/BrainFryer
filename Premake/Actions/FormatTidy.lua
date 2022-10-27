@@ -62,8 +62,8 @@ local function getCommandLine(cfg, file)
 		end
 	end
 
-	if cfg.includedirs or cfg.sysincludedirs or cfg.frameworkdirs then
-		local includes = getIncludeDirs(cfg, cfg.includedirs, cfg.sysincludedirs, cfg.frameworkdirs)
+	if cfg.includedirs or cfg.externalincludedirs or cfg.frameworkdirs then
+		local includes = getIncludeDirs(cfg, cfg.includedirs, cfg.externalincludedirs, cfg.frameworkdirs)
 		if #includes > 0 then
 			value = value .. list(includes)
 		end
@@ -76,8 +76,8 @@ local function getCommandLine(cfg, file)
 		end
 	end
 
-	if fcfg.includedirs or fcfg.sysincludedirs or fcfg.frameworkdirs then
-		local includes = getIncludeDirs(cfg, fcfg.includedirs, fcfg.sysincludedirs, fcfg.frameworkdirs)
+	if fcfg.includedirs or fcfg.externalincludedirs or fcfg.frameworkdirs then
+		local includes = getIncludeDirs(cfg, fcfg.includedirs, fcfg.externalincludedirs, fcfg.frameworkdirs)
 		if #includes > 0 then
 			value = value .. list(includes)
 		end
@@ -92,8 +92,9 @@ local function clangTidyFile(cfg, file)
 	end
 
 	local relpath = premake.workspace.getrelative(cfg.workspace, file.abspath)
-
-	os.execute(formatTidy.tidyCommand .. " " .. relpath .. " --" .. getCommandLine(cfg, file))
+	local cmd     = formatTidy.tidyCommand .. " " .. relpath .. " --" .. getCommandLine(cfg, file)
+	print(cmd)
+	os.execute(cmd)
 end
 
 premake.api.register({

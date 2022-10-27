@@ -1,4 +1,6 @@
 #include "Brainfryer/Envs/Windows/Win32Window.h"
+#include "Brainfryer/Input/Devices/Keyboard.h"
+#include "Brainfryer/Input/Devices/Mouse.h"
 #include "Brainfryer/Utils/UTFConv.h"
 
 #include <spdlog/fmt/fmt.h>
@@ -17,9 +19,23 @@ namespace Brainfryer::Windows
 	using HRESULT              = std::int32_t;
 	using PFN_GetDpiForMonitor = HRESULT (*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
 
+	static std::vector<Monitor>      s_Monitors;
+	static std::vector<Win32Window*> s_Windows;
+	static Win32Window*              s_CurrentFocused;
+
+	static std::uint32_t s_Keycodes[512] {
+		0xffffffff, 0x100, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x2d, 0x3d, 0x103, 0x102, 0x51, 0x57, 0x45, 0x52, 0x54, 0x59, 0x55, 0x49, 0x4f, 0x50, 0x5b, 0x5d, 0x101, 0x155, 0x41, 0x53, 0x44, 0x46, 0x47, 0x48, 0x4a, 0x4b, 0x4c, 0x3b, 0x27, 0x60, 0x154, 0x5c, 0x5a, 0x58, 0x43, 0x56, 0x42, 0x4e, 0x4d, 0x2c, 0x2e, 0x2f, 0x158, 0x14c, 0x156, 0x20, 0x118, 0x122, 0x123, 0x124, 0x125, 0x126, 0x127, 0x128, 0x129, 0x12a, 0x12b, 0x11c, 0x119, 0x147, 0x148, 0x149, 0x14d, 0x144, 0x145, 0x146, 0x14e, 0x141, 0x142, 0x143, 0x140, 0x14a, 0xffffffff, 0xffffffff, 0xa2, 0x12c, 0x12d, 0x150, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x12e, 0x12f, 0x130, 0x131, 0x132, 0x133, 0x134, 0x135, 0x136, 0x137, 0x138, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x139, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x14f, 0x159, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x14b, 0xffffffff, 0x11b, 0x15a, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x11a, 0xffffffff, 0x10c, 0x109, 0x10a, 0xffffffff, 0x107, 0xffffffff, 0x106, 0xffffffff, 0x10d, 0x108, 0x10b, 0x104, 0x105, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x157, 0x15b, 0x15c, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+	};
+
+	static std::uint32_t s_Scancodes[512] {
+		0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x39, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x28, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x33, 0xc, 0x34, 0x35, 0xb, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xffffffff, 0x27, 0xffffffff, 0xd, 0xffffffff, 0xffffffff, 0xffffffff, 0x1e, 0x30, 0x2e, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18, 0x19, 0x10, 0x13, 0x1f, 0x14, 0x16, 0x2f, 0x11, 0x2d, 0x15, 0x2c, 0x1a, 0x2b, 0x1b, 0xffffffff, 0xffffffff, 0x29, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x56, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x1, 0x1c, 0xf, 0xe, 0x152, 0x153, 0x14d, 0x14b, 0x150, 0x148, 0x149, 0x151, 0x147, 0x14f, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x3a, 0x46, 0x145, 0x137, 0x45, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x57, 0x58, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x76, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x52, 0x4f, 0x50, 0x51, 0x4b, 0x4c, 0x4d, 0x47, 0x48, 0x49, 0x53, 0x135, 0x37, 0x4a, 0x4e, 0x11c, 0x59, 0xffffffff, 0xffffffff, 0xffffffff, 0x2a, 0x1d, 0x38, 0x15b, 0x36, 0x11d, 0x138, 0x15c, 0x15d, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+	};
+
 	LRESULT Win32WinProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	{
 		Win32Window* window = reinterpret_cast<Win32Window*>(GetPropW(hWnd, L"BrainFryer"));
+		if (!window)
+			return DefWindowProcW(hWnd, Msg, wParam, lParam);
 
 		switch (Msg)
 		{
@@ -31,8 +47,29 @@ namespace Brainfryer::Windows
 				if (window->state() == EWindowState::Fullscreen)
 					return 0;
 				break;
+			case SC_KEYMENU:
+				return 0;
 			}
 			break;
+		case WM_SETFOCUS:
+			if (s_CurrentFocused)
+			{
+				s_CurrentFocused->m_Focused = false;
+				s_CurrentFocused->e_Focus(s_CurrentFocused, false);
+				s_CurrentFocused = nullptr;
+			}
+			s_CurrentFocused  = window;
+			window->m_Focused = true;
+			window->e_Focus(window, true);
+			return 0;
+		case WM_KILLFOCUS:
+			if (s_CurrentFocused)
+			{
+				s_CurrentFocused->m_Focused = false;
+				s_CurrentFocused->e_Focus(s_CurrentFocused, false);
+				s_CurrentFocused = nullptr;
+			}
+			return 0;
 		case WM_CLOSE:
 			window->m_RequestedClose = true;
 			return 0;
@@ -41,8 +78,10 @@ namespace Brainfryer::Windows
 		case WM_EXITSIZEMOVE:
 			break;
 		case WM_SIZE:
+		{
 			if (window->m_Specs.state != EWindowState::Fullscreen)
 			{
+				auto origState = window->m_Specs.state;
 				switch (wParam)
 				{
 				case SIZE_RESTORED:
@@ -55,35 +94,264 @@ namespace Brainfryer::Windows
 					window->m_Specs.state = EWindowState::Maximized;
 					break;
 				}
+				if (origState != window->m_Specs.state)
+					window->e_State(window, window->m_Specs.state);
 			}
-			window->m_Specs.rect.w = LOWORD(lParam);
-			window->m_Specs.rect.h = HIWORD(lParam);
+			std::uint32_t origW = window->m_Specs.rect.w;
+			std::uint32_t origH = window->m_Specs.rect.h;
+			std::uint32_t newW  = LOWORD(lParam);
+			std::uint32_t newH  = HIWORD(lParam);
+			if (newW != origW || newH != origH)
+			{
+				window->m_Specs.rect.w = newW;
+				window->m_Specs.rect.h = newH;
+				window->e_Size(window, newW, newH);
+			}
 			return 0;
+		}
 		case WM_MOVE:
-			window->m_Specs.rect.x = LOWORD(lParam);
-			window->m_Specs.rect.y = HIWORD(lParam);
+		{
+			std::uint32_t origX = window->m_Specs.rect.x;
+			std::uint32_t origY = window->m_Specs.rect.y;
+			std::uint32_t newX  = LOWORD(lParam);
+			std::uint32_t newY  = HIWORD(lParam);
+			if (newX != origX || newY != origY)
+			{
+				window->m_Specs.rect.x = newX;
+				window->m_Specs.rect.y = newY;
+				window->e_Move(window, newX, newY);
+			}
 			return 0;
+		}
+		case WM_UNICHAR:
+		{
+			if (wParam == UNICODE_NOCHAR)
+				return true;
+
+			window->e_Char(window, static_cast<std::uint32_t>(wParam));
+			return 0;
+		}
+		case WM_CHAR:
+		case WM_SYSCHAR:
+		{
+			if (wParam >= 0xD800 && wParam <= 0xDBFF)
+			{
+				window->m_HighSurrogate = static_cast<std::uint16_t>(wParam);
+			}
+			else
+			{
+				std::uint32_t codepoint = 0;
+				if (wParam >= 0xDC00 && wParam <= 0xDFFF)
+				{
+					if (window->m_HighSurrogate)
+					{
+						codepoint += static_cast<std::uint32_t>(window->m_HighSurrogate - 0xD800) << 10;
+						codepoint += static_cast<std::uint32_t>(wParam) - 0xDC00;
+						codepoint += 0x10000;
+					}
+				}
+				else
+					codepoint = static_cast<std::uint32_t>(wParam);
+
+				window->m_HighSurrogate = 0;
+				window->e_Char(window, codepoint);
+			}
+			return 0;
+		}
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
 		{
-			if (wParam == VK_F12)
-				if (window->m_Specs.visible)
-					window->hide();
+			std::uint32_t       key, scancode;
+			auto                keyState = HIWORD(lParam);
+			Input::EButtonState state    = keyState & KF_REPEAT ? Input::EButtonState::Repeated :
+			                               keyState & KF_UP     ? Input::EButtonState::Released :
+			                                                      Input::EButtonState::Pressed;
+
+			scancode = HIWORD(lParam) & (KF_EXTENDED | 0xFF);
+			if (!scancode)
+				scancode = MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_VSC);
+
+			switch (scancode)
+			{
+			case 0x54:
+				scancode = 0x137;
+				break;
+			case 0x146:
+				scancode = 0x45;
+				break;
+			case 0x136:
+				scancode = 0x36;
+				break;
+			}
+
+			key = s_Keycodes[scancode];
+
+			if (wParam == VK_CONTROL)
+			{
+				if (HIWORD(lParam) & KF_EXTENDED)
+				{
+					key = Input::ButtonIndices::KeyRightControl;
+				}
 				else
-					window->show();
-			else if (wParam == VK_F11)
-				window->fullscreen(window->m_Specs.state != EWindowState::Fullscreen);
-			else if (wParam == VK_F10)
-				if (window->m_Specs.state != EWindowState::Maximized)
-					window->maximize();
-				else
-					window->restore();
-			else if (wParam == VK_F9)
-				if (window->m_Specs.state != EWindowState::Iconified)
-					window->iconify();
-				else
-					window->restore();
+				{
+					MSG         next;
+					const DWORD time = GetMessageTime();
+
+					if (PeekMessageW(&next, nullptr, 0, 0, PM_NOREMOVE))
+						if (next.message == WM_KEYDOWN || next.message == WM_SYSKEYDOWN || next.message == WM_KEYUP || next.message == WM_SYSKEYUP)
+							if (next.wParam == VK_MENU && (HIWORD(next.lParam) & KF_EXTENDED) && next.time == time)
+								break;
+
+					key = Input::ButtonIndices::KeyLeftControl;
+				}
+			}
+			else if (wParam == VK_PROCESSKEY)
+			{
+				break;
+			}
+
+			if (state == Input::EButtonState::Released && wParam == VK_SHIFT)
+			{
+				window->e_Key(window, Input::ButtonIndices::KeyLeftShift, scancode, state);
+				window->e_Key(window, Input::ButtonIndices::KeyRightShift, scancode, state);
+			}
+			else if (wParam == VK_SNAPSHOT)
+			{
+				window->e_Key(window, key, scancode, Input::EButtonState::Pressed);
+				window->e_Key(window, key, scancode, Input::EButtonState::Released);
+			}
+			else
+				window->e_Key(window, key, scancode, state);
+
+			break;
+		}
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+		case WM_MBUTTONDOWN:
+		case WM_XBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_XBUTTONUP:
+		{
+			std::uint32_t       button;
+			Input::EButtonState state;
+
+			if (Msg == WM_LBUTTONDOWN || Msg == WM_LBUTTONUP)
+				button = Input::ButtonIndices::MouseLeft;
+			else if (Msg == WM_RBUTTONDOWN || Msg == WM_RBUTTONUP)
+				button = Input::ButtonIndices::MouseRight;
+			else if (Msg == WM_MBUTTONDOWN || Msg == WM_MBUTTONUP)
+				button = Input::ButtonIndices::MouseMiddle;
+			else if (GET_XBUTTON_WPARAM(wParam) == XBUTTON1)
+				button = Input::ButtonIndices::Mouse4;
+			else
+				button = Input::ButtonIndices::Mouse5;
+
+			if (Msg == WM_LBUTTONDOWN || Msg == WM_RBUTTONDOWN ||
+			    Msg == WM_MBUTTONDOWN || Msg == WM_XBUTTONDOWN)
+				state = Input::EButtonState::Pressed;
+			else
+				state = Input::EButtonState::Released;
+
+			window->e_MouseButton(window, button, state);
+
+			if (Msg == WM_XBUTTONDOWN || Msg == WM_XBUTTONUP)
+				return 1;
+
 			return 0;
+		}
+		case WM_MOUSEMOVE:
+		{
+			std::int32_t x = GET_X_LPARAM(lParam);
+			std::int32_t y = GET_Y_LPARAM(lParam);
+
+			if (!window->m_CursorTracked)
+			{
+				TRACKMOUSEEVENT tme {};
+				tme.cbSize    = sizeof(TRACKMOUSEEVENT);
+				tme.dwFlags   = TME_LEAVE;
+				tme.hwndTrack = window->m_HWnd;
+				TrackMouseEvent(&tme);
+
+				window->m_CursorTracked = true;
+				window->e_MouseEnterExit(window, true);
+			}
+
+			if (window->m_CursorMode == ECursorMode::Disabled)
+			{
+				std::int32_t dx = x - window->m_LastCursorPos.x;
+				std::int32_t dy = y - window->m_LastCursorPos.y;
+
+				if (dx != 0 || dy != 0)
+				{
+					window->m_VirtualCursorPos.x += dx;
+					window->m_VirtualCursorPos.y += dy;
+					window->e_MouseMove(window, static_cast<float>(window->m_VirtualCursorPos.x), static_cast<float>(window->m_VirtualCursorPos.y));
+				}
+			}
+			else
+			{
+				if (x != window->m_LastCursorPos.x || y != window->m_LastCursorPos.y)
+					window->e_MouseMove(window, static_cast<float>(x), static_cast<float>(y));
+			}
+			window->m_LastCursorPos = { x, y };
+			return 0;
+		}
+		case WM_INPUT:
+		{
+			if (window->m_CursorMode != ECursorMode::Raw)
+				break;
+
+			RAWINPUT* ri = reinterpret_cast<RAWINPUT*>(lParam);
+
+			UINT size;
+			GetRawInputData(ri, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
+
+			if (size >= window->m_RawInput.size())
+				window->m_RawInput.resize(size);
+
+			GetRawInputData(ri, RID_INPUT, window->m_RawInput.data(), &size, sizeof(RAWINPUTHEADER));
+
+			RAWINPUT*    data = reinterpret_cast<RAWINPUT*>(window->m_RawInput.data());
+			std::int32_t dx   = 0;
+			std::int32_t dy   = 0;
+			if (data->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+			{
+				dx = data->data.mouse.lLastX - window->m_LastCursorPos.x;
+				dy = data->data.mouse.lLastY - window->m_LastCursorPos.y;
+			}
+			else
+			{
+				dx = data->data.mouse.lLastX;
+				dy = data->data.mouse.lLastY;
+			}
+
+			window->m_VirtualCursorPos.x += dx;
+			window->m_VirtualCursorPos.y += dy;
+			window->e_MouseMove(window, static_cast<float>(window->m_VirtualCursorPos.x), static_cast<float>(window->m_VirtualCursorPos.y));
+			window->m_LastCursorPos.x += dx;
+			window->m_LastCursorPos.y += dy;
+			break;
+		}
+		case WM_MOUSELEAVE:
+			window->m_CursorTracked = false;
+			window->e_MouseEnterExit(window, false);
+			return 0;
+		case WM_MOUSEWHEEL:
+			window->e_MouseScroll(window, 0.0f, HIWORD(wParam) / static_cast<float>(WHEEL_DELTA));
+			return 0;
+		case WM_MOUSEHWHEEL:
+			window->e_MouseScroll(window, -HIWORD(wParam) / static_cast<float>(WHEEL_DELTA), 0.0f);
+			return 0;
+		case WM_DPICHANGED:
+		{
+			float xScale       = HIWORD(wParam) / 96.0f;
+			window->m_DPIScale = xScale;
+			window->e_DPIScale(window, xScale);
+			break;
 		}
 		}
 
@@ -94,9 +362,6 @@ namespace Brainfryer::Windows
 	{
 		return static_cast<HINSTANCE>(GetModuleHandleW(nullptr));
 	}
-
-	static std::vector<Monitor>      s_Monitors;
-	static std::vector<Win32Window*> s_Windows;
 
 	static float GetDPIScaleForMonitor(HMONITOR hMonitor);
 
@@ -221,6 +486,13 @@ namespace Brainfryer::Windows
 		return s_Monitors;
 	}
 
+	bool Win32Window::GetKeyState(std::uint32_t keycode)
+	{
+		auto scancode = s_Scancodes[keycode];
+		auto vk       = MapVirtualKeyW(scancode, MAPVK_VSC_TO_VK_EX);
+		return Brainfryer::Windows::GetKeyState(vk) & 0x8000;
+	}
+
 	Point Win32Window::GetCursorPos()
 	{
 		POINT pos;
@@ -328,7 +600,8 @@ namespace Brainfryer::Windows
 	      m_PPlacement({ sizeof(WINDOWPLACEMENT) }),
 	      m_RequestedClose(false),
 	      m_Focused(false),
-	      m_DPIScale(1.0f)
+	      m_DPIScale(1.0f),
+	      m_CursorMode(ECursorMode::Normal)
 	{
 		if (!s_ClassRegister.isRegistered())
 			return;
@@ -379,7 +652,7 @@ namespace Brainfryer::Windows
 			break;
 		case EWindowState::Fullscreen:
 			ShowWindow(m_HWnd, m_Specs.visible ? SW_NORMAL : SW_HIDE);
-			fullscreen();
+			Win32Window::fullscreen();
 			break;
 		}
 
@@ -645,6 +918,12 @@ namespace Brainfryer::Windows
 			DWORD style = GetWindowLongW(m_HWnd, GWL_EXSTYLE) & ~WS_EX_LAYERED;
 			SetWindowLongW(m_HWnd, GWL_EXSTYLE, style);
 		}
+	}
+
+	void Win32Window::setCursorMode(ECursorMode mode)
+	{
+		// TODO(MarcasRealAccount): Handle cursor mode change
+		m_CursorMode = mode;
 	}
 
 	Point Win32Window::screenToClient(Point pos) const

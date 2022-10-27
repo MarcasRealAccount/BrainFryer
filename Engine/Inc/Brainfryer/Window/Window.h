@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Brainfryer/Input/ButtonStates.h"
 #include "Brainfryer/Utils/BackTrace.h"
 #include "Brainfryer/Utils/Core.h"
+#include "Brainfryer/Utils/Event.h"
 #include "Brainfryer/Utils/Flags.h"
 #include "Brainfryer/Utils/Point.h"
 #include "Brainfryer/Utils/Rect.h"
@@ -9,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -41,6 +44,13 @@ namespace Brainfryer
 		No
 	};
 
+	enum class ECursorMode
+	{
+		Normal,
+		Disabled,
+		Raw
+	};
+
 	enum class EWindowState
 	{
 		Normal,
@@ -63,6 +73,8 @@ namespace Brainfryer
 	{
 	public:
 		static const std::vector<Monitor>& GetMonitors();
+
+		static bool GetKeyState(std::uint32_t keycode);
 
 		static Point GetCursorPos();
 		static void  SetCursor(ECursor cursor);
@@ -92,6 +104,7 @@ namespace Brainfryer
 		virtual void focus()                             = 0;
 		virtual void requestClose(bool request = true)   = 0;
 		virtual void setAlpha(float alpha)               = 0;
+		virtual void setCursorMode(ECursorMode mode)     = 0;
 
 		virtual bool             initialized() const    = 0;
 		virtual std::string_view title() const          = 0;
@@ -104,9 +117,25 @@ namespace Brainfryer
 		virtual bool             requestedClose() const = 0;
 		virtual bool             focused() const        = 0;
 		virtual float            getDPIScale() const    = 0;
+		virtual ECursorMode      getCursorMode() const  = 0;
 
 		virtual Point screenToClient(Point pos) const = 0;
 		virtual void  setCursorPos(Point pos)         = 0;
+
+	public:
+		Utils::Event<Window*, std::int32_t, std::int32_t>   e_Move;
+		Utils::Event<Window*, std::uint32_t, std::uint32_t> e_Size;
+		Utils::Event<Window*, EWindowState>                 e_State;
+		Utils::Event<Window*, bool>                         e_Focus;
+		Utils::Event<Window*, bool>                         e_Visible;
+		Utils::Event<Window*, float>                        e_DPIScale;
+
+		Utils::Event<Window*, float, float>                                      e_MouseMove;
+		Utils::Event<Window*, bool>                                              e_MouseEnterExit;
+		Utils::Event<Window*, float, float>                                      e_MouseScroll;
+		Utils::Event<Window*, std::uint32_t, Input::EButtonState>                e_MouseButton;
+		Utils::Event<Window*, std::uint32_t, std::uint32_t, Input::EButtonState> e_Key;
+		Utils::Event<Window*, std::uint32_t>                                     e_Char;
 	};
 
 	struct Monitor

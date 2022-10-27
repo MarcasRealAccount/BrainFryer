@@ -18,6 +18,8 @@ namespace Brainfryer::Windows
 
 		static const std::vector<Monitor>& GetMonitors();
 
+		static bool GetKeyState(std::uint32_t keycode);
+
 		static Point GetCursorPos();
 		static void  SetCursor(ECursor cursor);
 
@@ -47,6 +49,7 @@ namespace Brainfryer::Windows
 		virtual void focus() override;
 		virtual void requestClose(bool request = true) override;
 		virtual void setAlpha(float alpha) override;
+		virtual void setCursorMode(ECursorMode mode) override;
 
 		virtual bool             initialized() const override { return !!m_HWnd; }
 		virtual std::string_view title() const override { return m_Specs.title; }
@@ -59,6 +62,7 @@ namespace Brainfryer::Windows
 		virtual bool             requestedClose() const override { return m_RequestedClose; }
 		virtual bool             focused() const override { return m_Focused; }
 		virtual float            getDPIScale() const override { return m_DPIScale; }
+		virtual ECursorMode      getCursorMode() const override { return m_CursorMode; }
 
 		virtual Point screenToClient(Point pos) const override;
 		virtual void  setCursorPos(Point pos) override;
@@ -75,8 +79,16 @@ namespace Brainfryer::Windows
 		HWND            m_HWnd;
 		WINDOWPLACEMENT m_PPlacement;
 
-		bool  m_RequestedClose;
-		bool  m_Focused;
-		float m_DPIScale;
+		bool        m_RequestedClose;
+		bool        m_Focused;
+		float       m_DPIScale;
+		ECursorMode m_CursorMode;
+
+		bool          m_CursorTracked = false;
+		std::uint16_t m_HighSurrogate = 0;
+		Point         m_VirtualCursorPos { 0, 0 };
+		Point         m_LastCursorPos { 0, 0 };
+
+		std::vector<std::uint8_t> m_RawInput;
 	};
 } // namespace Brainfryer::Windows

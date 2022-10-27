@@ -848,7 +848,7 @@ namespace Brainfryer::DX12
 		static constexpr FLOAT D3D12_DEFAULT_BLEND_FACTOR_GREEN                = 1.0f;
 		static constexpr FLOAT D3D12_DEFAULT_BLEND_FACTOR_RED                  = 1.0f;
 		static constexpr FLOAT D3D12_DEFAULT_BORDER_COLOR_COMPONENT            = 0.0f;
-		static constexpr FLOAT D3D12_DEFAULT_DEPTH_BIAS                        = 0;
+		static constexpr INT   D3D12_DEFAULT_DEPTH_BIAS                        = 0;
 		static constexpr FLOAT D3D12_DEFAULT_DEPTH_BIAS_CLAMP                  = 0.0f;
 		static constexpr UINT  D3D12_DEFAULT_MAX_ANISOTROPY                    = 16;
 		static constexpr FLOAT D3D12_DEFAULT_MIP_LOD_BIAS                      = 0.0f;
@@ -4724,7 +4724,7 @@ namespace Brainfryer::DX12
 		ID3D12Device6 : public ID3D12Device5
 		{
 		public:
-			virtual HRESULT SetBackgroundProcessingMode(D3D12_BACKGROUND_PROCESSING_MODE Mode, D3D12_MEASUREMENTS_ACTION MeasurementsAction, HANDLE hEventToSignalUponCompletion, BOOL* pbFurtherMeasurementsDesired) = 0;
+			virtual HRESULT SetBackgroundProcessingMode(D3D12_BACKGROUND_PROCESSING_MODE Mode, D3D12_MEASUREMENTS_ACTION MeasurementsAction, HANDLE hEventToSignalUponCompletion, BOOL * pbFurtherMeasurementsDesired) = 0;
 		};
 
 		struct D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT

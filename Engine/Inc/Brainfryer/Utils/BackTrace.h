@@ -1,7 +1,6 @@
 #pragma once
 
 #include <filesystem>
-#include <source_location>
 #include <string>
 #include <vector>
 
@@ -15,11 +14,6 @@ namespace Brainfryer::Utils
 		SourceLocation()
 		    : m_Line(0),
 		      m_Column(0) {}
-		SourceLocation(const std::source_location& location)
-		    : m_File(location.file_name()),
-		      m_Function(location.function_name()),
-		      m_Line(location.line()),
-		      m_Column(location.column()) {}
 
 		void setFile(std::filesystem::path file, std::size_t line, std::size_t column)
 		{

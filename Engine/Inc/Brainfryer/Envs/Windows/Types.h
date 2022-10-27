@@ -17,6 +17,8 @@ namespace Brainfryer::Windows::Types
 	using HCURSOR   = struct HCURSOR__*;
 
 	using BYTE      = std::uint8_t;
+	using SHORT     = std::int16_t;
+	using USHORT    = std::uint16_t;
 	using INT       = std::int32_t;
 	using UINT      = std::uint32_t;
 	using LONG      = std::int32_t;

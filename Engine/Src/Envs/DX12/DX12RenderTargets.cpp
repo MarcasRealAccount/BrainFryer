@@ -70,7 +70,7 @@ namespace Brainfryer::DX12
 			}
 		}
 
-		if (hasDepthStencil())
+		if (!!m_DepthStencil.image)
 		{
 			desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 			desc.NumDescriptors = context->frameCount();

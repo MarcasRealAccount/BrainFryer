@@ -235,7 +235,7 @@ namespace Brainfryer::Input
 	} // namespace Detail
 
 	template <EBindingType T>
-	using BindingType = Detail::BindingType<T>::Type;
+	using BindingType = typename Detail::BindingType<T>::Type;
 
 	template <class T>
 	concept Bindable = std::is_same_v<std::remove_cv_t<decltype(T::Type)>, EBindingType>;

@@ -11,6 +11,14 @@ namespace Brainfryer
 			return {};
 	}
 
+	bool Window::GetKeyState(std::uint32_t keycode)
+	{
+		if constexpr (Core::s_IsSystemWindows)
+			return Windows::Win32Window::GetKeyState(keycode);
+		else
+			return false;
+	}
+
 	Point Window::GetCursorPos()
 	{
 		if constexpr (Core::s_IsSystemWindows)

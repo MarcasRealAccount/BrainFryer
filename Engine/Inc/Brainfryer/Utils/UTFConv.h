@@ -330,7 +330,7 @@ namespace Brainfryer::Utils::UTF
 		return requiredLength;
 	}
 
-	constexpr std::u32string ConvertUTF8ToUTF32(std::string_view utf8)
+	inline std::u32string ConvertUTF8ToUTF32(std::string_view utf8)
 	{
 		std::u32string utf32(UTF8ToUTF32RequiredLength(utf8.data(), utf8.size()), '\0');
 		std::size_t    utf8Offset = 0;
@@ -338,7 +338,7 @@ namespace Brainfryer::Utils::UTF
 		return utf32;
 	}
 
-	constexpr std::string ConvertUTF32ToUTF8(std::u32string_view utf32)
+	inline std::string ConvertUTF32ToUTF8(std::u32string_view utf32)
 	{
 		std::string utf8(UTF32ToUTF8RequiredLength(reinterpret_cast<const std::uint32_t*>(utf32.data()), utf32.size()), '\0');
 		std::size_t utf32Offset = 0;
@@ -346,7 +346,7 @@ namespace Brainfryer::Utils::UTF
 		return utf8;
 	}
 
-	constexpr std::u16string ConvertUTF8ToUTF16(std::string_view utf8)
+	inline std::u16string ConvertUTF8ToUTF16(std::string_view utf8)
 	{
 		std::u16string utf16(UTF8ToUTF16RequiredLength(utf8.data(), utf8.size()), '\0');
 		std::size_t    utf8Offset = 0;
@@ -354,7 +354,7 @@ namespace Brainfryer::Utils::UTF
 		return utf16;
 	}
 
-	constexpr std::string ConvertUTF16ToUTF8(std::u16string_view utf16)
+	inline std::string ConvertUTF16ToUTF8(std::u16string_view utf16)
 	{
 		std::string utf8(UTF16ToUTF8RequiredLength(reinterpret_cast<const wchar_t*>(utf16.data()), utf16.size()), '\0');
 		std::size_t utf16Offset = 0;
@@ -362,7 +362,7 @@ namespace Brainfryer::Utils::UTF
 		return utf8;
 	}
 
-	constexpr std::wstring ConvertUTF8ToWide(std::string_view utf8)
+	inline std::wstring ConvertUTF8ToWide(std::string_view utf8)
 	{
 		std::wstring wide(UTF8ToUTF16RequiredLength(utf8.data(), utf8.size()), '\0');
 		std::size_t  utf8Offset = 0;
@@ -370,7 +370,7 @@ namespace Brainfryer::Utils::UTF
 		return wide;
 	}
 
-	constexpr std::string ConvertWideToUTF8(std::wstring_view wide)
+	inline std::string ConvertWideToUTF8(std::wstring_view wide)
 	{
 		std::string utf8(UTF16ToUTF8RequiredLength(wide.data(), wide.size()), '\0');
 		std::size_t utf16Offset = 0;

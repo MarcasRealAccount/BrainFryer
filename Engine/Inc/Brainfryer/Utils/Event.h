@@ -9,13 +9,13 @@
 namespace Brainfryer::Utils
 {
 	template <bool B, class T1, class T2>
-	class Select
+	struct Select
 	{
 		using Type = T1;
 	};
 
 	template <class T1, class T2>
-	class Select<true, T1, T2>
+	struct Select<true, T1, T2>
 	{
 		using Type = T2;
 	};
@@ -25,19 +25,19 @@ namespace Brainfryer::Utils
 	std::is_rvalue_reference_v<T>;
 
 	template <class T>
-	using LargeByRef = Select<sizeof(T) <= 16, T&, T>::Type;
+	using LargeByRef = typename Select<sizeof(T) <= 16, T&, T>::Type;
 
 	template <NonRValue... Args>
 	class Event
 	{
 	public:
-		using CallbackType = std::function<void(Args...)>;
+		using CallbackType = std::function<void(LargeByRef<Args>...)>;
 
 	public:
 		void invoke(LargeByRef<Args>... args)
 		{
 			for (auto& callback : m_Callbacks)
-				callback(args...);
+				callback.second(args...);
 		}
 
 		void operator()(LargeByRef<Args>... args) { invoke(args...); }
@@ -50,6 +50,7 @@ namespace Brainfryer::Utils
 			m_Callbacks.insert_or_assign(id, std::move(callback));
 			return id;
 		}
+
 		void detachCallback(UID id)
 		{
 			auto itr = m_Callbacks.find(id);
@@ -61,6 +62,7 @@ namespace Brainfryer::Utils
 		{
 			return attachCallback(std::move(callback));
 		}
+
 		Event& operator-=(UID id)
 		{
 			detachCallback(id);

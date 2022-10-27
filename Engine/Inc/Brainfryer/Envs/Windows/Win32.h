@@ -90,6 +90,68 @@ namespace Brainfryer::Windows
 		WORD  id;
 	};
 
+	using RAWINPUTHEADER = struct tagRAWINPUTHEADER
+	{
+		DWORD  dwType;
+		DWORD  dwSize;
+		HANDLE hDevice;
+		WPARAM wParam;
+	};
+
+	using RAWMOUSE = struct tagRAWMOUSE
+	{
+		USHORT usFlags;
+		union
+		{
+			ULONG ulButtons;
+			struct
+			{
+				USHORT usButtonFlags;
+				USHORT usButtonData;
+			} DUMMYSTRUCTNAME;
+		} DUMMYUNIONNAME;
+		ULONG ulRawButtons;
+		LONG  lLastX;
+		LONG  lLastY;
+		ULONG ulExtraInformation;
+	};
+
+	using RAWKEYBOARD = struct tagRAWKEYBOARD
+	{
+		USHORT MakeCode;
+		USHORT Flags;
+		USHORT Reserved;
+		USHORT VKey;
+		UINT   Message;
+		ULONG  ExtraInformation;
+	};
+
+	using RAWHID = struct tagRAWHID
+	{
+		DWORD dwSizeHid;
+		DWORD dwCount;
+		BYTE  bRawData[1];
+	};
+
+	using RAWINPUT = struct tagRAWINPUT
+	{
+		RAWINPUTHEADER header;
+		union
+		{
+			RAWMOUSE    mouse;
+			RAWKEYBOARD keyboard;
+			RAWHID      hid;
+		} data;
+	};
+
+	using TRACKMOUSEEVENT = struct tagTRACKMOUSEEVENT
+	{
+		DWORD cbSize;
+		DWORD dwFlags;
+		HWND  hwndTrack;
+		DWORD dwHoverTime;
+	};
+
 	using COLORREF = DWORD;
 
 	extern "C"
@@ -150,6 +212,7 @@ namespace Brainfryer::Windows
 		WIN32API BOOL     GetWindowPlacement(HWND hWnd, WINDOWPLACEMENT* lpwndpl);
 		WIN32API BOOL     SetWindowPlacement(HWND hWnd, const WINDOWPLACEMENT* lpwndpl);
 		WIN32API BOOL     PeekMessageW(MSG* lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
+		WIN32API LONG     GetMessageTime();
 		WIN32API BOOL     TranslateMessage(const MSG* lpMsg);
 		WIN32API LRESULT  DispatchMessageW(const MSG* lpMsg);
 		WIN32API LRESULT  DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -157,6 +220,11 @@ namespace Brainfryer::Windows
 		WIN32API BOOL     SetForegroundWindow(HWND hWnd);
 		WIN32API HWND     SetFocus(HWND hWnd);
 		WIN32API BOOL     SetLayeredWindowAttributes(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
+
+		WIN32API UINT  MapVirtualKeyW(UINT uCode, UINT uMapType);
+		WIN32API UINT  GetRawInputData(RAWINPUT* hRawInput, UINT uiCommand, LPVOID pData, UINT* pcbSize, UINT cbSizeHeader);
+		WIN32API BOOL  TrackMouseEvent(TRACKMOUSEEVENT* lpEventTrack);
+		WIN32API SHORT GetKeyState(int nKeycode);
 	}
 
 	static constexpr DWORD FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x0100;
@@ -372,34 +440,91 @@ namespace Brainfryer::Windows
 
 	static constexpr UINT MB_OK = 0x0000;
 
-	static constexpr UINT PM_REMOVE = 0x0001;
+	static constexpr UINT PM_NOREMOVE = 0x0000;
+	static constexpr UINT PM_REMOVE   = 0x0001;
 
 	static constexpr UINT WM_MOVE          = 0x0003;
 	static constexpr UINT WM_SIZE          = 0x0005;
+	static constexpr UINT WM_SETFOCUS      = 0x0007;
+	static constexpr UINT WM_KILLFOCUS     = 0x0008;
 	static constexpr UINT WM_CLOSE         = 0x0010;
 	static constexpr UINT WM_QUIT          = 0x0012;
 	static constexpr UINT WM_SETFONT       = 0x0030;
+	static constexpr UINT WM_INPUT         = 0x00FF;
 	static constexpr UINT WM_KEYDOWN       = 0x0100;
 	static constexpr UINT WM_KEYUP         = 0x0101;
+	static constexpr UINT WM_CHAR          = 0x0102;
 	static constexpr UINT WM_SYSKEYDOWN    = 0x0104;
 	static constexpr UINT WM_SYSKEYUP      = 0x0105;
+	static constexpr UINT WM_SYSCHAR       = 0x0106;
+	static constexpr UINT WM_UNICHAR       = 0x0109;
 	static constexpr UINT WM_INITDIALOG    = 0x0110;
 	static constexpr UINT WM_COMMAND       = 0x0111;
 	static constexpr UINT WM_SYSCOMMAND    = 0x0112;
+	static constexpr UINT WM_MOUSEMOVE     = 0x0200;
+	static constexpr UINT WM_LBUTTONDOWN   = 0x0201;
+	static constexpr UINT WM_LBUTTONUP     = 0x0202;
+	static constexpr UINT WM_RBUTTONDOWN   = 0x0204;
+	static constexpr UINT WM_RBUTTONUP     = 0x0205;
+	static constexpr UINT WM_MBUTTONDOWN   = 0x0207;
+	static constexpr UINT WM_MBUTTONUP     = 0x0208;
+	static constexpr UINT WM_MOUSEWHEEL    = 0x020A;
+	static constexpr UINT WM_XBUTTONDOWN   = 0x020B;
+	static constexpr UINT WM_XBUTTONUP     = 0x020C;
+	static constexpr UINT WM_MOUSEHWHEEL   = 0x020E;
 	static constexpr UINT WM_ENTERSIZEMOVE = 0x0231;
 	static constexpr UINT WM_EXITSIZEMOVE  = 0x0232;
+	static constexpr UINT WM_MOUSELEAVE    = 0x02A3;
+	static constexpr UINT WM_DPICHANGED    = 0x02E0;
+
+	static constexpr UINT UNICODE_NOCHAR = 0xFFFF;
 
 	static constexpr WPARAM SIZE_RESTORED  = 0;
 	static constexpr WPARAM SIZE_MINIMIZED = 1;
 	static constexpr WPARAM SIZE_MAXIMIZED = 2;
 
+	static constexpr WPARAM SCF_ISSECURE    = 0x0001;
+	static constexpr WPARAM SC_SIZE         = 0xF000;
+	static constexpr WPARAM SC_MOVE         = 0xF010;
+	static constexpr WPARAM SC_MINIMIZE     = 0xF020;
+	static constexpr WPARAM SC_MAXIMIZE     = 0xF030;
+	static constexpr WPARAM SC_NEXTWINDOW   = 0xF040;
+	static constexpr WPARAM SC_PREVWINDOW   = 0xF050;
+	static constexpr WPARAM SC_CLOSE        = 0xF060;
+	static constexpr WPARAM SC_VSCROLL      = 0xF070;
+	static constexpr WPARAM SC_HSCROLL      = 0xF080;
+	static constexpr WPARAM SC_MOUSEMENU    = 0xF090;
+	static constexpr WPARAM SC_KEYMENU      = 0xF100;
+	static constexpr WPARAM SC_RESTORE      = 0xF120;
+	static constexpr WPARAM SC_TASKLIST     = 0xF130;
 	static constexpr WPARAM SC_SCREENSAVE   = 0xF140;
+	static constexpr WPARAM SC_HOTKEY       = 0xF150;
+	static constexpr WPARAM SC_DEFAULT      = 0xF160;
 	static constexpr WPARAM SC_MONITORPOWER = 0xF170;
+	static constexpr WPARAM SC_CONTEXTHELP  = 0xF180;
 
-	static constexpr WPARAM VK_F9  = 0x78;
-	static constexpr WPARAM VK_F10 = 0x79;
-	static constexpr WPARAM VK_F11 = 0x7A;
-	static constexpr WPARAM VK_F12 = 0x7B;
+	static constexpr DWORD KF_EXTENDED = 0x0100;
+	static constexpr DWORD KF_DLGMODE  = 0x0800;
+	static constexpr DWORD KF_MENUMODE = 0x1000;
+	static constexpr DWORD KF_ALTDOWN  = 0x2000;
+	static constexpr DWORD KF_REPEAT   = 0x4000;
+	static constexpr DWORD KF_UP       = 0x8000;
+
+	static constexpr WPARAM VK_SHIFT      = 0x10;
+	static constexpr WPARAM VK_CONTROL    = 0x11;
+	static constexpr WPARAM VK_MENU       = 0x12;
+	static constexpr WPARAM VK_SNAPSHOT   = 0x2C;
+	static constexpr WPARAM VK_F9         = 0x78;
+	static constexpr WPARAM VK_F10        = 0x79;
+	static constexpr WPARAM VK_F11        = 0x7A;
+	static constexpr WPARAM VK_F12        = 0x7B;
+	static constexpr WPARAM VK_PROCESSKEY = 0xE5;
+
+	static constexpr UINT MAPVK_VK_TO_VSC    = 0;
+	static constexpr UINT MAPVK_VSC_TO_VK    = 1;
+	static constexpr UINT MAPVK_VK_TO_CHAR   = 2;
+	static constexpr UINT MAPVK_VSC_TO_VK_EX = 3;
+	static constexpr UINT MAPVK_VK_TO_VSC_EX = 4;
 
 	static const HWND HWND_BOTTOM    = reinterpret_cast<HWND>(1);
 	static const HWND HWND_NOTOPMOST = reinterpret_cast<HWND>(-2);
@@ -409,14 +534,49 @@ namespace Brainfryer::Windows
 	static constexpr DWORD LWA_ALPHA    = 0x2;
 	static constexpr DWORD LWA_COLORKEY = 0x1;
 
-	constexpr std::uint32_t LOWORD(LPARAM l)
+	static constexpr DWORD WHEEL_DELTA = 120;
+
+	static constexpr DWORD RID_HEADER = 0x10000005;
+	static constexpr DWORD RID_INPUT  = 0x10000003;
+
+	static constexpr DWORD MOUSE_MOVE_RELATIVE      = 0x00;
+	static constexpr DWORD MOUSE_MOVE_ABSOLUTE      = 0x01;
+	static constexpr DWORD MOUSE_VIRTUAL_DESKTOP    = 0x02;
+	static constexpr DWORD MOUSE_ATTRIBUTES_CHANGED = 0x04;
+	static constexpr DWORD MOUSE_MOVE_NOCOALESCE    = 0x08;
+
+	static constexpr DWORD TME_CANCEL    = 0x80000000;
+	static constexpr DWORD TME_HOVER     = 0x00000001;
+	static constexpr DWORD TME_LEAVE     = 0x00000002;
+	static constexpr DWORD TME_NONCLIENT = 0x00000010;
+	static constexpr DWORD TME_QUERY     = 0x40000000;
+
+	static constexpr DWORD XBUTTON1 = 0x0001;
+	static constexpr DWORD XBUTTON2 = 0x0002;
+
+	constexpr std::int32_t LOWORD(LPARAM l)
 	{
-		return static_cast<std::uint32_t>(l & 0xFFFF);
+		return static_cast<std::int32_t>(l & 0xFFFF);
 	}
 
-	constexpr std::uint32_t HIWORD(LPARAM l)
+	constexpr std::int32_t HIWORD(LPARAM l)
 	{
-		return static_cast<std::uint32_t>((l >> 16) & 0xFFFF);
+		return static_cast<std::int32_t>((l >> 16) & 0xFFFF);
+	}
+
+	constexpr std::uint32_t GET_XBUTTON_WPARAM(WPARAM wParam)
+	{
+		return HIWORD(wParam);
+	}
+
+	constexpr std::int32_t GET_X_LPARAM(LPARAM lp)
+	{
+		return ((int) (short) LOWORD(lp));
+	}
+
+	constexpr std::int32_t GET_Y_LPARAM(LPARAM lp)
+	{
+		return ((int) (short) HIWORD(lp));
 	}
 
 	constexpr DWORD MAKELANGID(DWORD p, DWORD s)

@@ -1,6 +1,7 @@
 #include "Brainfryer/Envs/Windows/Win32Window.h"
 #include "Brainfryer/Input/Devices/Keyboard.h"
 #include "Brainfryer/Input/Devices/Mouse.h"
+#include "Brainfryer/Utils/Log.h"
 #include "Brainfryer/Utils/UTFConv.h"
 
 #include <spdlog/fmt/fmt.h>
@@ -199,8 +200,8 @@ namespace Brainfryer::Windows
 		{
 			std::uint32_t       key, scancode;
 			auto                keyState = HIWORD(lParam);
-			Input::EButtonState state    = keyState & KF_REPEAT ? Input::EButtonState::Repeated :
-			                               keyState & KF_UP     ? Input::EButtonState::Released :
+			Input::EButtonState state    = keyState & KF_UP     ? Input::EButtonState::Released :
+			                               keyState & KF_REPEAT ? Input::EButtonState::Repeated :
 			                                                      Input::EButtonState::Pressed;
 
 			scancode = HIWORD(lParam) & (KF_EXTENDED | 0xFF);
@@ -221,6 +222,8 @@ namespace Brainfryer::Windows
 			}
 
 			key = s_Keycodes[scancode];
+			if (key == ~0U)
+				break;
 
 			if (wParam == VK_CONTROL)
 			{

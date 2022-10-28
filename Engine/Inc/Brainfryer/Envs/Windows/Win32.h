@@ -585,12 +585,12 @@ namespace Brainfryer::Windows
 
 	constexpr std::int32_t LOWORD(LPARAM l)
 	{
-		return static_cast<std::int32_t>(l & 0xFFFF);
+		return static_cast<std::int16_t>(l & 0xFFFF);
 	}
 
 	constexpr std::int32_t HIWORD(LPARAM l)
 	{
-		return static_cast<std::int32_t>((l >> 16) & 0xFFFF);
+		return static_cast<std::int16_t>((l >> 16) & 0xFFFF);
 	}
 
 	constexpr std::uint32_t GET_XBUTTON_WPARAM(WPARAM wParam)

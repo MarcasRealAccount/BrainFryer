@@ -31,6 +31,14 @@ namespace Brainfryer::Utils
 		g_OriginalThrow = reinterpret_cast<decltype(g_OriginalThrow)>(Unix::dlvsym(handle, "__cxa_throw", "CXXABI_1.3"));
 		Unix::dlclose(handle);
 #endif
+
+		try
+		{
+			throw Utils::Exception("Hehe", "ehhe");
+		}
+		catch ([[maybe_unused]] const Utils::Exception& e)
+		{
+		}
 	}
 
 	BackTrace& LastBackTrace() { return tl_BackTrace; }
@@ -38,7 +46,17 @@ namespace Brainfryer::Utils
 #if BUILD_IS_TOOLSET_MSVC || (BUILD_IS_TOOLSET_CLANG && BUILD_IS_SYSTEM_WINDOWS)
 	Windows::LONG VectoredHandler(Windows::EXCEPTION_POINTERS* ExceptionPointers)
 	{
-		tl_BackTrace = CaptureBackTrace(6, 10);
+		if (ExceptionPointers->ExceptionRecord->ExceptionInformation[0] == 429065504ULL)
+		{
+			if (!g_ExcludedExceptionType)
+				g_ExcludedExceptionType = reinterpret_cast<void*>(ExceptionPointers->ExceptionRecord->ExceptionInformation[2]);
+			if (reinterpret_cast<void*>(ExceptionPointers->ExceptionRecord->ExceptionInformation[2]) != g_ExcludedExceptionType)
+				tl_BackTrace = CaptureBackTrace(6, 32);
+			else
+				tl_BackTrace = {};
+		}
+		else
+			tl_BackTrace = CaptureBackTrace(1, 32);
 		return 0;
 	}
 #elif BUILD_IS_TOOLSET_CLANG || BUILD_IS_TOOLSET_GCC
@@ -49,7 +67,7 @@ namespace Brainfryer::Utils
 			if (!g_ExcludedExceptionType)
 				g_ExcludedExceptionType = type;
 			if (type != g_ExcludedExceptionType)
-				tl_BackTrace = CaptureBackTrace(1, 10);
+				tl_BackTrace = CaptureBackTrace(1, 32);
 			g_OriginalThrow(exception, type, dest);
 		}
 	}

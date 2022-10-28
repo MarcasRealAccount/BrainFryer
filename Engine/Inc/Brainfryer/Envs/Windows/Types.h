@@ -27,6 +27,7 @@ namespace Brainfryer::Windows::Types
 	using ULONGLONG = std::uint64_t;
 	using WORD      = std::uint16_t;
 	using DWORD     = std::uint32_t;
+	using DWORD64   = std::uint64_t;
 	using QWORD     = std::uint64_t;
 	using FLOAT     = float;
 	using DOUBLE    = double;

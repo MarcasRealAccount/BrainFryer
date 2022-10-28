@@ -154,6 +154,171 @@ namespace Brainfryer::Windows
 
 	using COLORREF = DWORD;
 
+	using SE_OBJECT_TYPE = enum _SE_OBJECT_TYPE {
+		SE_UNKNOWN_OBJECT_TYPE,
+		SE_FILE_OBJECT,
+		SE_SERVICE,
+		SE_PRINTER,
+		SE_REGISTRY_KEY,
+		SE_LMSHARE,
+		SE_KERNEL_OBJECT,
+		SE_WINDOW_OBJECT,
+		SE_DS_OBJECT,
+		SE_DS_OBJECT_ALL,
+		SE_PROVIDER_DEFINED_OBJECT,
+		SE_WMIGUID_OBJECT,
+		SE_REGISTRY_WOW64_32KEY,
+		SE_REGISTRY_WOW64_64KEY
+	};
+
+	using SECURITY_INFORMATION = DWORD;
+	using PSID                 = void*;
+	using PACL                 = void*;
+	using PSECURITY_DESCRIPTOR = void*;
+
+	using ACCESS_MASK = DWORD;
+
+	using GENERIC_MAPPING = struct _GENERIC_MAPPING
+	{
+		ACCESS_MASK GenericRead;
+		ACCESS_MASK GenericWrite;
+		ACCESS_MASK GenericExecute;
+		ACCESS_MASK GenericAll;
+	};
+
+	using LUID_AND_ATTRIBUTES = struct _LUID_AND_ATTRIBUTES
+	{
+		LUID  Luid;
+		DWORD Attributes;
+	};
+
+	using PRIVILEGE_SET = struct _PRIVILEGE_SET
+	{
+		DWORD               PrivilegeCount;
+		DWORD               Control;
+		LUID_AND_ATTRIBUTES Privilege[1];
+	};
+
+	using EXCEPTION_RECORD = struct _EXCEPTION_RECORD
+	{
+		DWORD                     ExceptionCode;
+		DWORD                     ExceptionFlags;
+		struct _EXCEPTION_RECORD* ExceptionRecord;
+		void*                     ExceptionAddress;
+		DWORD                     NumberParameters;
+		ULONG_PTR                 ExceptionInformation[15];
+	};
+
+
+	using M128A = struct alignas(16) _M128A
+	{
+		ULONGLONG Low;
+		LONGLONG  High;
+	};
+
+	using XSAVE_FORMAT = struct alignas(16) _XSAVE_FORMAT
+	{
+		WORD  ControlWord;
+		WORD  StatusWord;
+		BYTE  TagWord;
+		BYTE  Reserved1;
+		WORD  ErrorOpcode;
+		DWORD ErrorOffset;
+		WORD  ErrorSelector;
+		WORD  Reserved2;
+		DWORD DataOffset;
+		WORD  DataSelector;
+		WORD  Reserved3;
+		DWORD MxCsr;
+		DWORD MxCsr_Mask;
+		M128A FloatRegisters[8];
+		M128A XmmRegisters[16];
+		BYTE  Reserved4[96];
+	};
+	using XMM_SAVE_AREA32 = XSAVE_FORMAT;
+
+	using CONTEXT = struct alignas(16) _CONTEXT
+	{
+		DWORD64 P1Home;
+		DWORD64 P2Home;
+		DWORD64 P3Home;
+		DWORD64 P4Home;
+		DWORD64 P5Home;
+		DWORD64 P6Home;
+		DWORD   ContextFlags;
+		DWORD   MxCsr;
+		WORD    SegCs;
+		WORD    SegDs;
+		WORD    SegEs;
+		WORD    SegFs;
+		WORD    SegGs;
+		WORD    SegSs;
+		DWORD   EFlags;
+		DWORD64 Dr0;
+		DWORD64 Dr1;
+		DWORD64 Dr2;
+		DWORD64 Dr3;
+		DWORD64 Dr6;
+		DWORD64 Dr7;
+		DWORD64 Rax;
+		DWORD64 Rcx;
+		DWORD64 Rdx;
+		DWORD64 Rbx;
+		DWORD64 Rsp;
+		DWORD64 Rbp;
+		DWORD64 Rsi;
+		DWORD64 Rdi;
+		DWORD64 R8;
+		DWORD64 R9;
+		DWORD64 R10;
+		DWORD64 R11;
+		DWORD64 R12;
+		DWORD64 R13;
+		DWORD64 R14;
+		DWORD64 R15;
+		DWORD64 Rip;
+		union
+		{
+			XMM_SAVE_AREA32 FltSave;
+			struct
+			{
+				M128A Header[2];
+				M128A Legacy[8];
+				M128A Xmm0;
+				M128A Xmm1;
+				M128A Xmm2;
+				M128A Xmm3;
+				M128A Xmm4;
+				M128A Xmm5;
+				M128A Xmm6;
+				M128A Xmm7;
+				M128A Xmm8;
+				M128A Xmm9;
+				M128A Xmm10;
+				M128A Xmm11;
+				M128A Xmm12;
+				M128A Xmm13;
+				M128A Xmm14;
+				M128A Xmm15;
+			} DUMMYSTRUCTNAME;
+		} DUMMYUNIONNAME;
+		M128A   VectorRegister[26];
+		DWORD64 VectorControl;
+		DWORD64 DebugControl;
+		DWORD64 LastBranchToRip;
+		DWORD64 LastBranchFromRip;
+		DWORD64 LastExceptionToRip;
+		DWORD64 LastExceptionFromRip;
+	};
+
+	using EXCEPTION_POINTERS = struct _EXCEPTION_POINTERS
+	{
+		EXCEPTION_RECORD* ExceptionRecord;
+		CONTEXT*          ContextRecord;
+	};
+
+	using PVECTORED_EXCEPTION_HANDLER = LONG (*)(EXCEPTION_POINTERS* ExceptionInfo);
+
 	extern "C"
 	{
 		WIN32API DWORD GetLastError();
@@ -180,6 +345,8 @@ namespace Brainfryer::Windows
 		WIN32API HCURSOR SetCursor(HCURSOR hCursor);
 		WIN32API HMODULE LoadLibraryW(LPCWSTR lpLibFileName);
 		WIN32API BOOL    FreeLibrary(HMODULE hLibModule);
+		WIN32API DWORD   GetSecurityInfo(HANDLE handle, SE_OBJECT_TYPE ObjectType, SECURITY_INFORMATION SecurityInfo, PSID* ppsidOwner, PSID* ppsidGroup, PACL* ppDacl, PACL* ppSacl, PSECURITY_DESCRIPTOR* ppSecurityDescriptor);
+		WIN32API BOOL    AccessCheck(PSECURITY_DESCRIPTOR pSecurityDescriptor, HANDLE ClientToken, DWORD DesiredAccess, GENERIC_MAPPING* GenericMapping, PRIVILEGE_SET* PrivilegeSet, DWORD* PrivilegeSetLength, DWORD* GrantedAccess, BOOL* AccessStatus);
 
 		WIN32API BOOL VirtualProtectEx(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flNewProtect, DWORD* lpflOldProtect);
 		WIN32API BOOL FlushInstructionCache(HANDLE hProcess, LPCVOID lpBaseAddress, SIZE_T dwSize);
@@ -225,6 +392,8 @@ namespace Brainfryer::Windows
 		WIN32API UINT  GetRawInputData(RAWINPUT* hRawInput, UINT uiCommand, LPVOID pData, UINT* pcbSize, UINT cbSizeHeader);
 		WIN32API BOOL  TrackMouseEvent(TRACKMOUSEEVENT* lpEventTrack);
 		WIN32API SHORT GetKeyState(int nKeycode);
+
+		WIN32API void* AddVectoredExceptionHandler(ULONG First, PVECTORED_EXCEPTION_HANDLER Handler);
 	}
 
 	static constexpr DWORD FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x0100;
@@ -582,6 +751,21 @@ namespace Brainfryer::Windows
 	static constexpr INT HTTRANSPARENT = -1;
 	static constexpr INT HTVSCROLL     = 7;
 	static constexpr INT HTZOOM        = 9;
+
+	static constexpr DWORD OWNER_SECURITY_INFORMATION               = 0x00000001L;
+	static constexpr DWORD GROUP_SECURITY_INFORMATION               = 0x00000002L;
+	static constexpr DWORD DACL_SECURITY_INFORMATION                = 0x00000004L;
+	static constexpr DWORD SACL_SECURITY_INFORMATION                = 0x00000008L;
+	static constexpr DWORD LABEL_SECURITY_INFORMATION               = 0x00000010L;
+	static constexpr DWORD ATTRIBUTE_SECURITY_INFORMATION           = 0x00000020L;
+	static constexpr DWORD SCOPE_SECURITY_INFORMATION               = 0x00000040L;
+	static constexpr DWORD PROCESS_TRUST_LABEL_SECURITY_INFORMATION = 0x00000080L;
+	static constexpr DWORD ACCESS_FILTER_SECURITY_INFORMATION       = 0x00000100L;
+	static constexpr DWORD BACKUP_SECURITY_INFORMATION              = 0x00010000L;
+	static constexpr DWORD PROTECTED_DACL_SECURITY_INFORMATION      = 0x80000000L;
+	static constexpr DWORD PROTECTED_SACL_SECURITY_INFORMATION      = 0x40000000L;
+	static constexpr DWORD UNPROTECTED_DACL_SECURITY_INFORMATION    = 0x20000000L;
+	static constexpr DWORD UNPROTECTED_SACL_SECURITY_INFORMATION    = 0x10000000L;
 
 	constexpr std::int32_t LOWORD(LPARAM l)
 	{

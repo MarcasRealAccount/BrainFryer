@@ -26,8 +26,6 @@ namespace Brainfryer::Editor
 {
 	int SafeMain()
 	{
-		Log::GetOrCreateLogger("khjasjhdk")->critical("khjashdjka");
-
 		WindowSpecification specs;
 		specs.title   = "BrainFryer editor";
 		specs.state   = EWindowState::Maximized;
@@ -529,6 +527,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 			Brainfryer::Log::Critical("{}\n{}", exception.what(), backtrace);
 		Brainfryer::Window::FatalErrorBox(exception.what(), "", backtrace);
 		return 0x0000'7FFF;
+	}
+	catch (...)
+	{
+		auto& backtrace = Brainfryer::Utils::LastBackTrace();
+		if (backtrace.frames().empty())
+			Brainfryer::Log::Critical("Uncaught exception occurred");
+		else
+			Brainfryer::Log::Critical("Uncaught exception occurred\n{}", backtrace);
+		Brainfryer::Window::FatalErrorBox("Uncaught exception occurred", "", backtrace);
+		return 0x007F'FFFF;
 	}
 }
 

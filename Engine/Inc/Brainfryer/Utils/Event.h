@@ -72,4 +72,52 @@ namespace Brainfryer::Utils
 	private:
 		std::unordered_map<UID, CallbackType> m_Callbacks;
 	};
+
+	template <NonRValue ReturnType, NonRValue... Args>
+	class RequestEvent
+	{
+	public:
+		using CallbackType = std::function<bool(ReturnType&, LargeByRef<Args>...)>;
+
+	public:
+		bool invoke(ReturnType& ret, LargeByRef<Args>... args)
+		{
+			for (auto& callback : m_Callbacks)
+				if (callback.second(ret, args...))
+					return true;
+			return false;
+		}
+
+		bool operator()(ReturnType& ret, LargeByRef<Args>... args) { return invoke(ret, args...); }
+
+		UID attachCallback(CallbackType callback)
+		{
+			UID id = UID::Random(0);
+			while (m_Callbacks.find(id) != m_Callbacks.end())
+				id = UID::Random(0);
+			m_Callbacks.insert_or_assign(id, std::move(callback));
+			return id;
+		}
+
+		void detachCallback(UID id)
+		{
+			auto itr = m_Callbacks.find(id);
+			if (itr != m_Callbacks.end())
+				m_Callbacks.erase(itr);
+		}
+
+		UID operator+=(CallbackType callback)
+		{
+			return attachCallback(std::move(callback));
+		}
+
+		RequestEvent& operator-=(UID id)
+		{
+			detachCallback(id);
+			return *this;
+		}
+
+	private:
+		std::unordered_map<UID, CallbackType> m_Callbacks;
+	};
 } // namespace Brainfryer::Utils

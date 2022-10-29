@@ -30,6 +30,7 @@ namespace Brainfryer::Editor
 
 		UID focusID;
 		UID mouseButtonID;
+		UID mouseScrollID;
 		UID keyID;
 		UID charID;
 	};
@@ -71,6 +72,12 @@ namespace Brainfryer::Editor
 			io.AddMouseButtonEvent(button, state == Input::EButtonState::Pressed);
 		};
 
+		bd->mouseScrollID = bd->window->e_MouseScroll += []([[maybe_unused]] Window* window, float x, float y)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddMouseWheelEvent(x, y);
+		};
+
 		bd->keyID = bd->window->e_Key += []([[maybe_unused]] Window* window, std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state)
 		{
 			UpdateKeyModifiers();
@@ -98,6 +105,7 @@ namespace Brainfryer::Editor
 
 		bd->window->e_Focus -= bd->focusID;
 		bd->window->e_MouseButton -= bd->mouseButtonID;
+		bd->window->e_MouseScroll -= bd->mouseScrollID;
 		bd->window->e_Key -= bd->keyID;
 		bd->window->e_Char -= bd->charID;
 		delete bd;
@@ -249,8 +257,11 @@ namespace Brainfryer::Editor
 		ImGuiViewport* mouseViewport   = nullptr;
 		ImGuiID        mouseViewportID = 0;
 		if (Window* hoveredWindow = Window::WindowFromPoint(mouseScreenPos))
-			if (mouseViewport = ImGui::FindViewportByPlatformHandle(hoveredWindow))
+		{
+			mouseViewport = ImGui::FindViewportByPlatformHandle(hoveredWindow);
+			if (mouseViewport)
 				mouseViewportID = mouseViewport->ID;
+		}
 		io.AddMouseViewportEvent(mouseViewportID);
 
 		if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
@@ -324,6 +335,12 @@ namespace Brainfryer::Editor
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			io.AddMouseButtonEvent(button, state == Input::EButtonState::Pressed);
+		};
+
+		vd->window->e_MouseScroll += []([[maybe_unused]] Window* window, float x, float y)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			io.AddMouseWheelEvent(x, y);
 		};
 
 		vd->window->e_Key += []([[maybe_unused]] Window* window, std::uint32_t keycode, std::uint32_t scancode, Input::EButtonState state)

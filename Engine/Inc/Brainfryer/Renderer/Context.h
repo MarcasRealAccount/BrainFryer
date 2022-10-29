@@ -29,7 +29,7 @@ namespace Brainfryer
 		static UID           NewCMDList();
 		static void          DestroyCMDList(UID id);
 		static CommandList*  CurrentCMDList(UID id = {});
-		static CommandList*  NextFrame();
+		static CommandList*  NextFrame(UID id = {});
 		static std::uint32_t FrameIndex();
 		static std::uint32_t FrameCount();
 
@@ -50,7 +50,7 @@ namespace Brainfryer
 		virtual UID           newCMDList()                = 0;
 		virtual void          destroyCMDList(UID id)      = 0;
 		virtual CommandList*  currentCMDList(UID id = {}) = 0;
-		virtual CommandList*  nextFrame()                 = 0;
+		virtual CommandList*  nextFrame(UID id = {})      = 0;
 		virtual std::uint32_t frameIndex() const          = 0;
 		virtual std::uint32_t frameCount() const          = 0;
 

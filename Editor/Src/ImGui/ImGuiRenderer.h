@@ -12,4 +12,7 @@ namespace Brainfryer::Editor
 	void ImGuiRendererShutdown();
 	void ImGuiRendererNewFrame();
 	void ImGuiRendererDrawData(ImDrawData* drawData, CommandList* commandList);
+
+	ImTextureID       ImGuiImage(const DescriptorHeapRef& ref);
+	DescriptorHeapRef ImGuiImageRef(ImTextureID id);
 } // namespace Brainfryer::Editor

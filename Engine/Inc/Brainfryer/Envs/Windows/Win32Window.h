@@ -26,6 +26,7 @@ namespace Brainfryer::Windows
 		static Window* WindowFromPoint(Point pos);
 
 		static void MsgLoop();
+		static void SetMainOnRender(std::function<void()> mainOnRender);
 
 		static void FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 		static void HandleLastError(std::string_view functionName);
@@ -70,6 +71,9 @@ namespace Brainfryer::Windows
 
 		auto  handle() const { return m_HWnd; }
 		auto& getSpecs() const { return m_Specs; }
+
+	public:
+		Utils::RequestEvent<Windows::LRESULT, Win32Window*, UINT, WPARAM, LPARAM> e_WindowMsg;
 
 	private:
 		WindowSpecification m_Specs;

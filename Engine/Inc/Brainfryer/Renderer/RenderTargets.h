@@ -22,6 +22,8 @@ namespace Brainfryer
 	public:
 		virtual ~RenderTargets() = default;
 
+		virtual void update(std::uint32_t index) = 0;
+
 		virtual std::uint32_t colorCount() const      = 0;
 		virtual bool          hasDepthStencil() const = 0;
 

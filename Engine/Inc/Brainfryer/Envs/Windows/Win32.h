@@ -13,9 +13,12 @@ namespace Brainfryer::Windows
 {
 	using namespace Types;
 
+	using HRESULT = std::int32_t;
+
 	using WNDPROC         = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
 	using DLGPROC         = LRESULT (*)(HWND, UINT, WPARAM, LPARAM);
 	using MONITORENUMPROC = BOOL (*)(HMONITOR, HDC, RECT*, LPARAM);
+	using TIMERPROC       = void (*)(HWND, UINT, UINT_PTR, DWORD);
 
 	using WINDOWPLACEMENT = struct tagWINDOWPLACEMENT
 	{
@@ -317,6 +320,31 @@ namespace Brainfryer::Windows
 		CONTEXT*          ContextRecord;
 	};
 
+	using WINDOWPOS = struct tagWINDOWPOS
+	{
+		HWND hwnd;
+		HWND hwndInsertAfter;
+		int  x;
+		int  y;
+		int  cx;
+		int  cy;
+		UINT flags;
+	};
+
+	using NCCALCSIZE_PARAMS = struct tagNCCALCSIZE_PARAMS
+	{
+		RECT       rgrc[3];
+		WINDOWPOS* lppos;
+	};
+
+	using MARGINS = struct _MARGINS
+	{
+		int cxLeftWidth;
+		int cxRightWidth;
+		int cyTopHeight;
+		int cyBottomHeight;
+	};
+
 	using PVECTORED_EXCEPTION_HANDLER = LONG (*)(EXCEPTION_POINTERS* ExceptionInfo);
 
 	extern "C"
@@ -387,6 +415,8 @@ namespace Brainfryer::Windows
 		WIN32API BOOL     SetForegroundWindow(HWND hWnd);
 		WIN32API HWND     SetFocus(HWND hWnd);
 		WIN32API BOOL     SetLayeredWindowAttributes(HWND hwnd, COLORREF crKey, BYTE bAlpha, DWORD dwFlags);
+		WIN32API UINT_PTR SetTimer(HWND hWnd, UINT_PTR nIDEvent, UINT uElapse, TIMERPROC lpTimerFunc);
+		WIN32API BOOL     KillTimer(HWND hWnd, UINT_PTR nIDEvent);
 
 		WIN32API UINT  MapVirtualKeyW(UINT uCode, UINT uMapType);
 		WIN32API UINT  GetRawInputData(RAWINPUT* hRawInput, UINT uiCommand, LPVOID pData, UINT* pcbSize, UINT cbSizeHeader);
@@ -394,6 +424,8 @@ namespace Brainfryer::Windows
 		WIN32API SHORT GetKeyState(int nKeycode);
 
 		WIN32API void* AddVectoredExceptionHandler(ULONG First, PVECTORED_EXCEPTION_HANDLER Handler);
+
+		WIN32API HRESULT DwmExtendFrameIntoClientArea(HWND hWnd, const MARGINS* pMarInset);
 	}
 
 	static constexpr DWORD FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x0100;
@@ -426,9 +458,6 @@ namespace Brainfryer::Windows
 	static LPCWSTR const IDC_SIZENS   = reinterpret_cast<LPCWSTR const>(32645);
 	static LPCWSTR const IDC_SIZENWSE = reinterpret_cast<LPCWSTR const>(32642);
 	static LPCWSTR const IDC_SIZEWE   = reinterpret_cast<LPCWSTR const>(32644);
-
-	static constexpr int SM_CXSCREEN = 0;
-	static constexpr int SM_CYSCREEN = 1;
 
 	static constexpr DWORD MONITOR_DEFAULTTONULL    = 0x0000'0000;
 	static constexpr DWORD MONITOR_DEFAULTTOPRIMARY = 0x0000'0001;
@@ -620,6 +649,7 @@ namespace Brainfryer::Windows
 	static constexpr UINT WM_QUIT          = 0x0012;
 	static constexpr UINT WM_SETCURSOR     = 0x0020;
 	static constexpr UINT WM_SETFONT       = 0x0030;
+	static constexpr UINT WM_NCCALCSIZE    = 0x0083;
 	static constexpr UINT WM_NCHITTEST     = 0x0084;
 	static constexpr UINT WM_INPUT         = 0x00FF;
 	static constexpr UINT WM_KEYDOWN       = 0x0100;
@@ -632,6 +662,7 @@ namespace Brainfryer::Windows
 	static constexpr UINT WM_INITDIALOG    = 0x0110;
 	static constexpr UINT WM_COMMAND       = 0x0111;
 	static constexpr UINT WM_SYSCOMMAND    = 0x0112;
+	static constexpr UINT WM_TIMER         = 0x0113;
 	static constexpr UINT WM_MOUSEMOVE     = 0x0200;
 	static constexpr UINT WM_LBUTTONDOWN   = 0x0201;
 	static constexpr UINT WM_LBUTTONUP     = 0x0202;
@@ -766,6 +797,111 @@ namespace Brainfryer::Windows
 	static constexpr DWORD PROTECTED_SACL_SECURITY_INFORMATION      = 0x40000000L;
 	static constexpr DWORD UNPROTECTED_DACL_SECURITY_INFORMATION    = 0x20000000L;
 	static constexpr DWORD UNPROTECTED_SACL_SECURITY_INFORMATION    = 0x10000000L;
+
+	static constexpr DWORD WVR_ALIGNTOP    = 0x0010;
+	static constexpr DWORD WVR_ALIGNRIGHT  = 0x0080;
+	static constexpr DWORD WVR_ALIGNLEFT   = 0x0020;
+	static constexpr DWORD WVR_ALIGNBOTTOM = 0x0040;
+	static constexpr DWORD WVR_HREDRAW     = 0x0100;
+	static constexpr DWORD WVR_VREDRAW     = 0x0200;
+	static constexpr DWORD WVR_REDRAW      = 0x0300;
+	static constexpr DWORD WVR_VALIDRECTS  = 0x0400;
+
+	static constexpr INT SM_ARRANGE                     = 56;
+	static constexpr INT SM_CLEANBOOT                   = 67;
+	static constexpr INT SM_CMONITORS                   = 80;
+	static constexpr INT SM_CMOUSEBUTTONS               = 43;
+	static constexpr INT SM_CONVERTIBLESLATEMODE        = 0x2003;
+	static constexpr INT SM_CXBORDER                    = 5;
+	static constexpr INT SM_CXCURSOR                    = 13;
+	static constexpr INT SM_CXDLGFRAME                  = 7;
+	static constexpr INT SM_CXDOUBLECLK                 = 36;
+	static constexpr INT SM_CXDRAG                      = 68;
+	static constexpr INT SM_CXEDGE                      = 45;
+	static constexpr INT SM_CXFIXEDFRAME                = 7;
+	static constexpr INT SM_CXFOCUSBORDER               = 83;
+	static constexpr INT SM_CXFRAME                     = 32;
+	static constexpr INT SM_CXFULLSCREEN                = 16;
+	static constexpr INT SM_CXHSCROLL                   = 21;
+	static constexpr INT SM_CXHTHUMB                    = 10;
+	static constexpr INT SM_CXICON                      = 11;
+	static constexpr INT SM_CXICONSPACING               = 38;
+	static constexpr INT SM_CXMAXIMIZED                 = 61;
+	static constexpr INT SM_CXMAXTRACK                  = 59;
+	static constexpr INT SM_CXMENUCHECK                 = 71;
+	static constexpr INT SM_CXMENUSIZE                  = 54;
+	static constexpr INT SM_CXMIN                       = 28;
+	static constexpr INT SM_CXMINIMIZED                 = 57;
+	static constexpr INT SM_CXMINSPACING                = 47;
+	static constexpr INT SM_CXMINTRACK                  = 34;
+	static constexpr INT SM_CXPADDEDBORDER              = 92;
+	static constexpr INT SM_CXSCREEN                    = 0;
+	static constexpr INT SM_CXSIZE                      = 30;
+	static constexpr INT SM_CXSIZEFRAME                 = 32;
+	static constexpr INT SM_CXSMICON                    = 49;
+	static constexpr INT SM_CXSMSIZE                    = 52;
+	static constexpr INT SM_CXVIRTUALSCREEN             = 78;
+	static constexpr INT SM_CXVSCROLL                   = 2;
+	static constexpr INT SM_CYBORDER                    = 6;
+	static constexpr INT SM_CYCAPTION                   = 4;
+	static constexpr INT SM_CYCURSOR                    = 14;
+	static constexpr INT SM_CYDLGFRAME                  = 8;
+	static constexpr INT SM_CYDOUBLECLK                 = 37;
+	static constexpr INT SM_CYDRAG                      = 69;
+	static constexpr INT SM_CYEDGE                      = 46;
+	static constexpr INT SM_CYFIXEDFRAME                = 8;
+	static constexpr INT SM_CYFOCUSBORDER               = 84;
+	static constexpr INT SM_CYFRAME                     = 33;
+	static constexpr INT SM_CYFULLSCREEN                = 17;
+	static constexpr INT SM_CYHSCROLL                   = 3;
+	static constexpr INT SM_CYICON                      = 12;
+	static constexpr INT SM_CYICONSPACING               = 39;
+	static constexpr INT SM_CYKANJIWINDOW               = 18;
+	static constexpr INT SM_CYMAXIMIZED                 = 62;
+	static constexpr INT SM_CYMAXTRACK                  = 60;
+	static constexpr INT SM_CYMENU                      = 15;
+	static constexpr INT SM_CYMENUCHECK                 = 72;
+	static constexpr INT SM_CYMENUSIZE                  = 55;
+	static constexpr INT SM_CYMIN                       = 29;
+	static constexpr INT SM_CYMINIMIZED                 = 58;
+	static constexpr INT SM_CYMINSPACING                = 48;
+	static constexpr INT SM_CYMINTRACK                  = 35;
+	static constexpr INT SM_CYSCREEN                    = 1;
+	static constexpr INT SM_CYSIZE                      = 31;
+	static constexpr INT SM_CYSIZEFRAME                 = 33;
+	static constexpr INT SM_CYSMCAPTION                 = 51;
+	static constexpr INT SM_CYSMICON                    = 50;
+	static constexpr INT SM_CYSMSIZE                    = 53;
+	static constexpr INT SM_CYVIRTUALSCREEN             = 79;
+	static constexpr INT SM_CYVSCROLL                   = 20;
+	static constexpr INT SM_CYVTHUMB                    = 9;
+	static constexpr INT SM_DBCSENABLED                 = 42;
+	static constexpr INT SM_DEBUG                       = 22;
+	static constexpr INT SM_DIGITIZER                   = 94;
+	static constexpr INT SM_IMMENABLED                  = 82;
+	static constexpr INT SM_MAXIMUMTOUCHES              = 95;
+	static constexpr INT SM_MEDIACENTER                 = 87;
+	static constexpr INT SM_MENUDROPALIGNMENT           = 40;
+	static constexpr INT SM_MIDEASTENABLED              = 74;
+	static constexpr INT SM_MOUSEPRESENT                = 19;
+	static constexpr INT SM_MOUSEHORIZONTALWHEELPRESENT = 91;
+	static constexpr INT SM_MOUSEWHEELPRESENT           = 75;
+	static constexpr INT SM_NETWORK                     = 63;
+	static constexpr INT SM_PENWINDOWS                  = 41;
+	static constexpr INT SM_REMOTECONTROL               = 0x2001;
+	static constexpr INT SM_REMOTESESSION               = 0x1000;
+	static constexpr INT SM_SAMEDISPLAYFORMAT           = 81;
+	static constexpr INT SM_SECURE                      = 44;
+	static constexpr INT SM_SERVERR2                    = 89;
+	static constexpr INT SM_SHOWSOUNDS                  = 70;
+	static constexpr INT SM_SHUTTINGDOWN                = 0x2000;
+	static constexpr INT SM_SLOWMACHINE                 = 73;
+	static constexpr INT SM_STARTER                     = 88;
+	static constexpr INT SM_SWAPBUTTON                  = 23;
+	static constexpr INT SM_SYSTEMDOCKED                = 0x2004;
+	static constexpr INT SM_TABLETPC                    = 86;
+	static constexpr INT SM_XVIRTUALSCREEN              = 76;
+	static constexpr INT SM_YVIRTUALSCREEN              = 77;
 
 	constexpr std::int32_t LOWORD(LPARAM l)
 	{

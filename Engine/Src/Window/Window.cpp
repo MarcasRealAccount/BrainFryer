@@ -3,6 +3,14 @@
 
 namespace Brainfryer
 {
+	EWindowingAPI Window::GetAPI()
+	{
+		if constexpr (Core::s_IsSystemWindows)
+			return EWindowingAPI::Win32;
+		else
+			return EWindowingAPI::None;
+	}
+
 	const std::vector<Monitor>& Window::GetMonitors()
 	{
 		if constexpr (Core::s_IsSystemWindows)
@@ -55,6 +63,12 @@ namespace Brainfryer
 	{
 		if constexpr (Core::s_IsSystemWindows)
 			Windows::Win32Window::MsgLoop();
+	}
+
+	void Window::SetMainOnRender(std::function<void()> mainOnRender)
+	{
+		if constexpr (Core::s_IsSystemWindows)
+			Windows::Win32Window::SetMainOnRender(std::move(mainOnRender));
 	}
 
 	void Window::FatalErrorBox(std::string_view message, std::string_view title, const Utils::BackTrace& backTrace)

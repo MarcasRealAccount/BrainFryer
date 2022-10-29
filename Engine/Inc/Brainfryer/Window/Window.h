@@ -59,6 +59,12 @@ namespace Brainfryer
 		Fullscreen
 	};
 
+	enum class EWindowingAPI
+	{
+		None = 0,
+		Win32
+	};
+
 	struct WindowSpecification
 	{
 	public:
@@ -72,6 +78,8 @@ namespace Brainfryer
 	class Window
 	{
 	public:
+		static EWindowingAPI GetAPI();
+
 		static const std::vector<Monitor>& GetMonitors();
 
 		static bool GetKeyState(std::uint32_t keycode);
@@ -83,6 +91,8 @@ namespace Brainfryer
 
 		static std::unique_ptr<Window> Create(WindowSpecification specs);
 		static void                    MsgLoop();
+
+		static void SetMainOnRender(std::function<void()> mainOnRender);
 
 		static void FatalErrorBox(std::string_view message, std::string_view title = "", const Utils::BackTrace& backTrace = {});
 
@@ -126,6 +136,7 @@ namespace Brainfryer
 	public:
 		Utils::Event<Window*, std::int32_t, std::int32_t>   e_Move;
 		Utils::Event<Window*, std::uint32_t, std::uint32_t> e_Size;
+		Utils::Event<Window*>                               e_Render;
 		Utils::Event<Window*, EWindowState>                 e_State;
 		Utils::Event<Window*, bool>                         e_Focus;
 		Utils::Event<Window*, bool>                         e_Visible;

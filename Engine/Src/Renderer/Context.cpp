@@ -71,10 +71,10 @@ namespace Brainfryer
 		return nullptr;
 	}
 
-	CommandList* Context::NextFrame()
+	CommandList* Context::NextFrame(UID id)
 	{
 		if (s_CurrentContext)
-			return s_CurrentContext->nextFrame();
+			return s_CurrentContext->nextFrame(id);
 		return nullptr;
 	}
 

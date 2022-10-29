@@ -1,6 +1,3 @@
-#include "Utils/Core.h"
-#if BUILD_IS_CONFIG_DEBUG
-
 // dear imgui, v1.89 WIP
 // (demo code)
 
@@ -8811,5 +8808,3 @@ void ImGui::ShowStyleEditor(ImGuiStyle*) {}
 #endif
 
 #endif // #ifndef IMGUI_DISABLE
-
-#endif

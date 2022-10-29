@@ -115,6 +115,84 @@ namespace Brainfryer::DX12
 	{
 	}
 
+	void DX12RenderTargets::update(std::uint32_t index)
+	{
+		auto& device = Context::Get<DX12Context>()->device();
+
+		for (std::size_t i = 0; i < m_Colors.size(); ++i)
+		{
+			auto& view = m_Colors[i];
+
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc {};
+			rtvDesc.Format        = DX12Format(view.image->format());
+			rtvDesc.ViewDimension = DX12RTVViewDimension(view.type);
+			switch (view.type)
+			{
+			case EImageType::_1D:
+				rtvDesc.Texture1D.MipSlice = view.mipLevels;
+				break;
+			case EImageType::_1DArray:
+				rtvDesc.Texture1DArray.MipSlice        = view.mipLevels;
+				rtvDesc.Texture1DArray.FirstArraySlice = view.firstArraySlice;
+				rtvDesc.Texture1DArray.ArraySize       = view.arraySize;
+				break;
+			case EImageType::_2D:
+				rtvDesc.Texture2D.MipSlice   = view.mipLevels;
+				rtvDesc.Texture2D.PlaneSlice = view.planeSlice;
+				break;
+			case EImageType::_2DArray:
+				rtvDesc.Texture2D.MipSlice             = view.mipLevels;
+				rtvDesc.Texture2DArray.FirstArraySlice = view.firstArraySlice;
+				rtvDesc.Texture2DArray.ArraySize       = view.arraySize;
+				rtvDesc.Texture2D.PlaneSlice           = view.planeSlice;
+				break;
+			case EImageType::_3D:
+				rtvDesc.Texture3D.MipSlice    = view.mipLevels;
+				rtvDesc.Texture3D.FirstWSlice = view.firstArraySlice;
+				rtvDesc.Texture3D.WSize       = view.arraySize;
+				break;
+			}
+
+			auto& resources = static_cast<DX12FrameImage*>(view.image)->resources();
+
+			D3D12_CPU_DESCRIPTOR_HANDLE dest = m_RTVStart;
+			dest.ptr += (index * m_Colors.size() + i) * m_RTVHeapInc;
+			device->CreateRenderTargetView(resources[index].get(), &rtvDesc, dest);
+		}
+
+		if (!!m_DepthStencil.image)
+		{
+			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc {};
+			dsvDesc.Flags         = D3D12_DSV_FLAG_NONE;
+			dsvDesc.Format        = DX12Format(m_DepthStencil.image->format());
+			dsvDesc.ViewDimension = DX12DSVViewDimension(m_DepthStencil.type);
+			switch (m_DepthStencil.type)
+			{
+			case EImageType::_1D:
+				dsvDesc.Texture1D.MipSlice = m_DepthStencil.mipLevels;
+				break;
+			case EImageType::_1DArray:
+				dsvDesc.Texture1DArray.MipSlice        = m_DepthStencil.mipLevels;
+				dsvDesc.Texture1DArray.FirstArraySlice = m_DepthStencil.firstArraySlice;
+				dsvDesc.Texture1DArray.ArraySize       = m_DepthStencil.arraySize;
+				break;
+			case EImageType::_2D:
+				dsvDesc.Texture2D.MipSlice = m_DepthStencil.mipLevels;
+				break;
+			case EImageType::_2DArray:
+				dsvDesc.Texture2D.MipSlice             = m_DepthStencil.mipLevels;
+				dsvDesc.Texture1DArray.FirstArraySlice = m_DepthStencil.firstArraySlice;
+				dsvDesc.Texture1DArray.ArraySize       = m_DepthStencil.arraySize;
+				break;
+			}
+			auto& resources = static_cast<DX12FrameImage*>(m_DepthStencil.image)->resources();
+
+			D3D12_CPU_DESCRIPTOR_HANDLE dest = m_DSVStart;
+			dest.ptr += index * m_DSVHeapInc;
+			device->CreateDepthStencilView(resources[index].get(), &dsvDesc, dest);
+		}
+	}
+
 	D3D12_CPU_DESCRIPTOR_HANDLE DX12RenderTargets::getRTVStart(std::uint32_t frameIndex) const
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVStart;

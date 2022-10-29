@@ -174,7 +174,8 @@ namespace Brainfryer::DX12
 		std::string msg = HRMessage(hr);
 		if (hr < 0)
 		{
-			Log::GetOrCreateLogger("DX12")->error("{}", msg);
+			auto backtrace = Utils::CaptureBackTrace(1, 10);
+			Log::GetOrCreateLogger("DX12")->error("{}\n{}", msg, backtrace);
 			return false;
 		}
 		else

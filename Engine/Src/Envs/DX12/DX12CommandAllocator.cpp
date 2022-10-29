@@ -4,6 +4,9 @@
 
 namespace Brainfryer::DX12
 {
+	DX12CommandAllocator::DX12CommandAllocator()
+	    : m_Type(ECommandListType::Direct) {}
+
 	DX12CommandAllocator::DX12CommandAllocator(const CommandAllocatorInfo& info)
 	    : m_Type(info.type)
 	{

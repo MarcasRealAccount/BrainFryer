@@ -22,6 +22,7 @@ namespace Brainfryer::Windows
 
 	static std::vector<Monitor>      s_Monitors;
 	static std::vector<Win32Window*> s_Windows;
+	static std::function<void()>     s_MainOnRender;
 	static Win32Window*              s_CurrentFocused;
 
 	static std::uint32_t s_Keycodes[512] {
@@ -39,6 +40,10 @@ namespace Brainfryer::Windows
 		Win32Window* window = reinterpret_cast<Win32Window*>(GetPropW(hWnd, L"BrainFryer"));
 		if (!window)
 			return DefWindowProcW(hWnd, Msg, wParam, lParam);
+
+		LRESULT result = 0;
+		if (window->e_WindowMsg(result, window, Msg, wParam, lParam))
+			return result;
 
 		switch (Msg)
 		{
@@ -109,8 +114,21 @@ namespace Brainfryer::Windows
 			window->m_RequestedClose = true;
 			return 0;
 		case WM_ENTERSIZEMOVE:
+			//SetTimer(hWnd, 1, 10, nullptr);
 			break;
 		case WM_EXITSIZEMOVE:
+			//KillTimer(hWnd, 1);
+			break;
+		case WM_TIMER:
+			if (wParam == 1)
+			{
+				if (s_MainOnRender)
+				{
+					s_MainOnRender();
+					for (auto wnd : s_Windows)
+						wnd->e_Render(wnd);
+				}
+			}
 			break;
 		case WM_SIZE:
 		{
@@ -567,6 +585,11 @@ namespace Brainfryer::Windows
 		}
 	}
 
+	void Win32Window::SetMainOnRender(std::function<void()> mainOnRender)
+	{
+		s_MainOnRender = std::move(mainOnRender);
+	}
+
 	void Win32Window::FatalErrorBox(std::string_view message, std::string_view title, const Utils::BackTrace& backTrace)
 	{
 		std::wstring msg     = backTrace.frames().empty() ? Utils::UTF::ConvertUTF8ToWide(message) : Utils::UTF::ConvertUTF8ToWide(fmt::format("{}\n\n{}", message, backTrace));
@@ -606,7 +629,7 @@ namespace Brainfryer::Windows
 		LocalFree(msg);
 	}
 
-	void Win32WindowFlags(EWindowFlags flags, DWORD& dwStyle, DWORD& dwExStyle)
+	static void Win32WindowFlags(EWindowFlags flags, DWORD& dwStyle, DWORD& dwExStyle)
 	{
 		dwStyle   = 0;
 		dwExStyle = 0;
@@ -633,6 +656,7 @@ namespace Brainfryer::Windows
 	      m_RequestedClose(false),
 	      m_Focused(false),
 	      m_DPIScale(1.0f),
+	      m_Cursor(ECursor::Arrow),
 	      m_CursorMode(ECursorMode::Normal)
 	{
 		if (!s_ClassRegister.isRegistered())

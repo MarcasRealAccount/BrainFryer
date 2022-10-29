@@ -39,6 +39,8 @@ namespace Brainfryer::DX12
 		DX12RenderTargets(const RenderTargetsInfo& info);
 		~DX12RenderTargets();
 
+		virtual void update(std::uint32_t index) override;
+
 		virtual std::uint32_t colorCount() const override { return static_cast<std::uint32_t>(m_Colors.size()); }
 		virtual bool          hasDepthStencil() const override { return !!m_DepthStencil.image; }
 

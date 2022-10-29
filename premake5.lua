@@ -83,7 +83,7 @@ workspace("BrainFryer")
 		libs.stb:setupDep()
 
 		filter("system:windows")
-			links({ "d3dcompiler.lib" })
+			links({ "d3dcompiler.lib", "dwmapi.lib" })
 		filter({})
 
 		common:addActions()

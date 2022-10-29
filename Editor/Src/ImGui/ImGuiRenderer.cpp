@@ -32,7 +32,6 @@ namespace Brainfryer::Editor
 	public:
 		Swapchain* swapchain = nullptr;
 		bool       owns      = false;
-		UID        cmdListID;
 
 		std::vector<std::unique_ptr<Buffer>> renderVertexBuffers;
 		std::vector<std::unique_ptr<Buffer>> renderIndexBuffers;
@@ -114,7 +113,6 @@ namespace Brainfryer::Editor
 		if (drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f)
 			return;
 
-		RendererBackendData*  bd  = GetRendererBackendData();
 		RendererViewportData* vd  = GetRendererViewportData(drawData->OwnerViewport);
 		auto&                 rvb = vd->renderVertexBuffers[Context::FrameIndex()];
 		auto&                 rib = vd->renderIndexBuffers[Context::FrameIndex()];
@@ -180,7 +178,7 @@ namespace Brainfryer::Editor
 					if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
 						continue;
 
-					commandList->bindDescriptorTable(1, { bd->descriptorHeap, static_cast<std::uint32_t>(reinterpret_cast<std::uint64_t>(pcmd->GetTexID())) });
+					commandList->bindDescriptorTable(1, { ImGuiImageRef(pcmd->TextureId) });
 					commandList->setScissors({ Rect { static_cast<std::int32_t>(clipMin.x), static_cast<std::int32_t>(clipMin.y), static_cast<std::uint32_t>(clipMax.x), static_cast<std::uint32_t>(clipMax.y) } });
 					commandList->drawIndexedInstanced(pcmd->ElemCount, 1, pcmd->IdxOffset + globalIdxOffset, pcmd->VtxOffset + globalVtxOffset, 0);
 				}
@@ -222,7 +220,6 @@ namespace Brainfryer::Editor
 
 		vd->swapchain = Swapchain::Create(swapchainInfo).release();
 		vd->owns      = true;
-		vd->cmdListID = Context::NewCMDList();
 		vd->renderVertexBuffers.resize(Context::FrameCount());
 		vd->renderIndexBuffers.resize(Context::FrameCount());
 	}
@@ -234,7 +231,6 @@ namespace Brainfryer::Editor
 			return;
 		if (vd->owns)
 		{
-			Context::DestroyCMDList(vd->cmdListID);
 			Context::WaitForGPU();
 			delete vd->swapchain;
 		}
@@ -249,10 +245,7 @@ namespace Brainfryer::Editor
 		RendererBackendData*  bd = GetRendererBackendData();
 		RendererViewportData* vd = GetRendererViewportData(vp);
 
-		auto commandList = Context::CurrentCMDList(vd->cmdListID);
-
-		commandList->begin();
-
+		auto commandList = Context::CurrentCMDList();
 		commandList->setDescriptorHeaps({ bd->descriptorHeap });
 
 		vd->swapchain->bind(commandList);
@@ -261,10 +254,6 @@ namespace Brainfryer::Editor
 		ImGuiRendererDrawData(vp->DrawData, commandList);
 
 		vd->swapchain->unbind(commandList);
-
-		commandList->end();
-
-		Context::ExecuteCommandLists({ commandList });
 	}
 
 	void SwapBuffers(ImGuiViewport* vp, [[maybe_unused]] void* renderArg)
@@ -405,7 +394,7 @@ namespace Brainfryer::Editor
 		view.mipLevels = 1;
 
 		bd->fontImageDescriptor = bd->descriptorHeap->createImageView(view);
-		io.Fonts->SetTexID(reinterpret_cast<ImTextureID>(static_cast<std::uint64_t>(bd->fontImageDescriptor.index())));
+		io.Fonts->SetTexID(ImGuiImage(bd->fontImageDescriptor));
 		loadCommandList->end();
 
 		Context::ExecuteCommandLists({ loadCommandList.get() });
@@ -443,5 +432,16 @@ namespace Brainfryer::Editor
 
 		const float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		commandList->setBlendFactor(blendFactor);
+	}
+
+	ImTextureID ImGuiImage(const DescriptorHeapRef& ref)
+	{
+		return reinterpret_cast<ImTextureID>(static_cast<std::uint64_t>(ref.index()));
+	}
+
+	DescriptorHeapRef ImGuiImageRef(ImTextureID id)
+	{
+		RendererBackendData* bd = GetRendererBackendData();
+		return { bd->descriptorHeap, static_cast<std::uint32_t>(reinterpret_cast<std::uint64_t>(id)) };
 	}
 } // namespace Brainfryer::Editor

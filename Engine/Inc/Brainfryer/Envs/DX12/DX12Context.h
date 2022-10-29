@@ -29,7 +29,7 @@ namespace Brainfryer::DX12
 		virtual UID           newCMDList() override;
 		virtual void          destroyCMDList(UID id) override;
 		virtual CommandList*  currentCMDList(UID id = {}) override;
-		virtual CommandList*  nextFrame() override;
+		virtual CommandList*  nextFrame(UID id = {}) override;
 		virtual std::uint32_t frameIndex() const override;
 		virtual std::uint32_t frameCount() const override;
 
@@ -51,9 +51,8 @@ namespace Brainfryer::DX12
 		std::uint32_t           m_DMCCookie;
 		Com<ID3D12CommandQueue> m_CommandQueue;
 
-		std::vector<DX12CommandAllocator> m_CommandAllocators;
-
-		std::unordered_map<UID, std::unique_ptr<DX12CommandList[]>> m_CommandListAllocationMap;
+		std::unordered_map<UID, std::unique_ptr<DX12CommandAllocator[]>> m_CommandAllocatorsMap;
+		std::unordered_map<UID, std::unique_ptr<DX12CommandList[]>>      m_CommandListAllocationMap;
 
 		std::uint32_t              m_FrameIndex;
 		Com<ID3D12Fence1>          m_FrameFence;

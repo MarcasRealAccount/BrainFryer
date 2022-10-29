@@ -1,3 +1,4 @@
+#include "Editor/EditorApplication.h"
 #include "Envs/DX12/DXCompiler.h"
 #include "ImGui/ImGuiBackend.h"
 #include "ImGui/ImGuiRenderer.h"
@@ -26,125 +27,42 @@ namespace Brainfryer::Editor
 {
 	int SafeMain()
 	{
-		WindowSpecification specs;
-		specs.title   = "BrainFryer editor";
-		specs.state   = EWindowState::Maximized;
-		specs.visible = false;
-
-		std::unique_ptr<Window> window = Window::Create(specs);
-		if (!window->initialized())
+		if (!Context::SelectBestAPI())
+		{
+			Window::FatalErrorBox("Failed to select graphics context");
 			return 1;
+		}
 
-		if (!Context::SelectSpecificAPI(EContextAPI::DX12))
-		{
-			Window::FatalErrorBox("Failed to select context api");
+		EditorApplication application {};
+		if (!application.init())
 			return 2;
-		}
+
+		auto onMainRender = [&]()
 		{
-			std::unique_ptr<Swapchain> swapchain;
-			{
-				SwapchainInfo swapchainInfo {};
-				swapchainInfo.window      = window.get();
-				swapchainInfo.bufferCount = 3;
+			auto commandList = Context::NextFrame();
+			commandList->begin();
 
-				swapchain = Swapchain::Create(swapchainInfo);
-			}
-			if (!swapchain->initialized())
-				return 3;
+			application.render();
 
-			std::unique_ptr<Brainfryer::DescriptorHeap> globalDescriptorHeap;
-			{
-				Brainfryer::DescriptorHeapInfo info {};
-				info.type            = Brainfryer::EDescriptorHeapType::SRV_CBV_UAV;
-				info.capacity        = 1;
-				info.shaderVisible   = true;
-				globalDescriptorHeap = Brainfryer::DescriptorHeap::Create(info);
-				if (!globalDescriptorHeap->initialized())
-					return 4;
-			}
+			commandList->end();
 
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO& io = ImGui::GetIO();
-			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-			io.ConfigWindowsMoveFromTitleBarOnly = true;
+			Context::ExecuteCommandLists({ commandList });
 
-			ImGui::StyleColorsDark();
+			application.present();
+		};
 
-			ImGuiStyle& style = ImGui::GetStyle();
-			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			{
-				style.WindowRounding              = 0.0f;
-				style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-			}
-			ImGuiBackendInit(window.get());
-			ImGuiRendererInit(swapchain.get(), globalDescriptorHeap.get());
+		Window::SetMainOnRender(onMainRender);
 
-			bool showDemoWindow = true;
-
-			window->show();
-
-			while (!window->requestedClose())
-			{
-				auto commandList = Context::NextFrame();
-
-				ImGuiRendererNewFrame();
-				ImGuiBackendNewFrame();
-				ImGui::NewFrame();
-
-				ImGuiViewport* MainViewport = ImGui::GetMainViewport();
-				ImGui::SetNextWindowPos(MainViewport->Pos);
-				ImGui::SetNextWindowSize(MainViewport->Size);
-				ImGui::SetNextWindowViewport(MainViewport->ID);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
-
-				ImGuiWindowFlags DockspaceWindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-				ImGui::Begin("MainDockspaceWindow", nullptr, DockspaceWindowFlags);
-				ImGui::PopStyleVar(3);
-
-				ImGui::DockSpace(ImGui::GetID("MainDockspace"));
-
-				if (showDemoWindow)
-					ImGui::ShowDemoWindow(&showDemoWindow);
-
-				ImGui::End();
-
-				ImGui::Render();
-
-				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-				{
-					ImGui::UpdatePlatformWindows();
-					ImGui::RenderPlatformWindowsDefault();
-				}
-
-				commandList->begin();
-
-				commandList->setDescriptorHeaps({ globalDescriptorHeap.get() });
-				swapchain->bind(commandList);
-				swapchain->clear(commandList, 0.0f, 0.0f, 0.0f, 1.0f);
-				ImGuiRendererDrawData(ImGui::GetDrawData(), commandList);
-				swapchain->unbind(commandList);
-
-				commandList->end();
-
-				Brainfryer::Context::ExecuteCommandLists({ commandList });
-
-				swapchain->present();
-
-				Window::MsgLoop();
-			}
-
-			Brainfryer::Context::WaitForGPU();
-
-			ImGuiRendererShutdown();
-			ImGuiBackendShutdown();
+		while (application.running())
+		{
+			onMainRender();
+			Window::MsgLoop();
 		}
-		Brainfryer::Context::Destroy();
+
+		Context::WaitForGPU();
+		application.deinit();
+
+		Context::Destroy();
 
 		/*if (!Brainfryer::Context::SelectBestAPI())
 	{

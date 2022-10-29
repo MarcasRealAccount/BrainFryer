@@ -8,6 +8,7 @@ namespace Brainfryer::DX12
 	class DX12CommandAllocator : public CommandAllocator
 	{
 	public:
+		DX12CommandAllocator();
 		DX12CommandAllocator(const CommandAllocatorInfo& info);
 		DX12CommandAllocator(ID3D12Device9* device, ECommandListType type);
 		DX12CommandAllocator(DX12CommandAllocator&& move) noexcept;

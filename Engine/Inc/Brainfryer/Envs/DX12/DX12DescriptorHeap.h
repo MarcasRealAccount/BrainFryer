@@ -42,6 +42,7 @@ namespace Brainfryer::DX12
 		virtual DescriptorHeapRef              createBufferView(BufferView view, std::uint32_t stride = 0, bool isRaw = false) override;
 		virtual DescriptorHeapRef              createImageView(ImageView view) override;
 		virtual std::vector<DescriptorHeapRef> createFrameImageViews(FrameImageView view) override;
+		virtual DescriptorHeapRef              createFrameImageViews(FrameImageView view, std::uint32_t index) override;
 
 		D3D12_GPU_DESCRIPTOR_HANDLE descriptorHandle(std::uint32_t index) const;
 

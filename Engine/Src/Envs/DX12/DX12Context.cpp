@@ -99,18 +99,16 @@ namespace Brainfryer::DX12
 
 		HRVLT(m_Device->CreateCommandQueue(&queueDesc, m_CommandQueue, m_CommandQueue));
 
-		m_CommandAllocators.reserve(m_FrameCount);
 		m_FrameValues.resize(m_FrameCount, 0);
 
-		auto cmdLists = std::make_unique<DX12CommandList[]>(m_FrameCount);
+		auto allocators = std::make_unique<DX12CommandAllocator[]>(m_FrameCount);
+		auto cmdLists   = std::make_unique<DX12CommandList[]>(m_FrameCount);
 		for (std::uint32_t i = 0; i < m_FrameCount; ++i)
 		{
-			CommandAllocatorInfo allocatorInfo {};
-			allocatorInfo.type = ECommandListType::Direct;
-			auto& allocator    = m_CommandAllocators.emplace_back(m_Device.get(), ECommandListType::Direct);
-
-			new (&cmdLists[i]) DX12CommandList(&allocator, m_Device.get());
+			new (&allocators[i]) DX12CommandAllocator(m_Device.get(), ECommandListType::Direct);
+			new (&cmdLists[i]) DX12CommandList(&allocators[i], m_Device.get());
 		}
+		m_CommandAllocatorsMap.insert_or_assign({}, std::move(allocators));
 		m_CommandListAllocationMap.insert_or_assign({}, std::move(cmdLists));
 
 		HRVLT(m_Device->CreateFence(m_FrameValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, m_FrameFence, m_FrameFence));
@@ -147,9 +145,14 @@ namespace Brainfryer::DX12
 		while (m_CommandListAllocationMap.find(id) != m_CommandListAllocationMap.end())
 			id = UID::Random(0);
 
-		auto cmdLists = std::make_unique<DX12CommandList[]>(m_FrameCount);
+		auto allocators = std::make_unique<DX12CommandAllocator[]>(m_FrameCount);
+		auto cmdLists   = std::make_unique<DX12CommandList[]>(m_FrameCount);
 		for (std::uint32_t i = 0; i < m_FrameCount; ++i)
-			new (&cmdLists[i]) DX12CommandList(&m_CommandAllocators[i], m_Device.get());
+		{
+			new (&allocators[i]) DX12CommandAllocator(m_Device.get(), ECommandListType::Direct);
+			new (&cmdLists[i]) DX12CommandList(&allocators[i], m_Device.get());
+		}
+		m_CommandAllocatorsMap.insert_or_assign(id, std::move(allocators));
 		m_CommandListAllocationMap.insert_or_assign(id, std::move(cmdLists));
 		return id;
 	}
@@ -170,23 +173,26 @@ namespace Brainfryer::DX12
 		return &itr->second[m_FrameIndex];
 	}
 
-	CommandList* DX12Context::nextFrame()
+	CommandList* DX12Context::nextFrame(UID id)
 	{
-		m_FrameIndex = (m_FrameIndex + 1) % m_FrameCount;
-
-		std::uint64_t currentValue = m_FrameValues[m_FrameIndex];
-		HRVLT(m_CommandQueue->Signal(m_FrameFence.get(), currentValue));
-
-		if (m_FrameFence->GetCompletedValue() < m_FrameValues[m_FrameIndex])
+		if (id == 0)
 		{
-			HRVLT(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent));
-			Windows::WaitForSingleObjectEx(m_FrameEvent, Windows::INFINITE, false);
+			m_FrameIndex = (m_FrameIndex + 1) % m_FrameCount;
+
+			std::uint64_t currentValue = m_FrameValues[m_FrameIndex];
+			HRVLT(m_CommandQueue->Signal(m_FrameFence.get(), currentValue));
+
+			if (m_FrameFence->GetCompletedValue() < m_FrameValues[m_FrameIndex])
+			{
+				HRVLT(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent));
+				Windows::WaitForSingleObjectEx(m_FrameEvent, Windows::INFINITE, false);
+			}
+
+			m_FrameValues[m_FrameIndex] = currentValue + 1;
 		}
 
-		m_FrameValues[m_FrameIndex] = currentValue + 1;
-
-		m_CommandAllocators[m_FrameIndex].reset();
-		return &m_CommandListAllocationMap[{}][m_FrameIndex];
+		m_CommandAllocatorsMap[id][m_FrameIndex].reset();
+		return &m_CommandListAllocationMap[id][m_FrameIndex];
 	}
 
 	std::uint32_t DX12Context::frameIndex() const

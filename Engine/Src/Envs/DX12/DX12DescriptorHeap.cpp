@@ -213,6 +213,63 @@ namespace Brainfryer::DX12
 		return refs;
 	}
 
+	DescriptorHeapRef DX12DescriptorHeap::createFrameImageViews(FrameImageView view, std::uint32_t index)
+	{
+		auto context = Context::Get<DX12Context>();
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC desc {};
+		desc.Format                  = DX12Format(view.image->format());
+		desc.ViewDimension           = DX12ImageViewType(view.type);
+		desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING; //D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
+		switch (view.type)
+		{
+		case EImageType::_1D:
+			desc.Texture1D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture1D.MipLevels           = view.mipLevels;
+			desc.Texture1D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_1DArray:
+			desc.Texture1DArray.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture1DArray.MipLevels           = view.mipLevels;
+			desc.Texture1DArray.FirstArraySlice     = view.firstArraySlice;
+			desc.Texture1DArray.ArraySize           = view.arraySize;
+			desc.Texture1DArray.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_2D:
+			desc.Texture2D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture2D.MipLevels           = view.mipLevels;
+			desc.Texture2D.PlaneSlice          = view.planeSlice;
+			desc.Texture2D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_2DArray:
+			desc.Texture2DArray.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture2DArray.MipLevels           = view.mipLevels;
+			desc.Texture2DArray.FirstArraySlice     = view.firstArraySlice;
+			desc.Texture2DArray.ArraySize           = view.arraySize;
+			desc.Texture2DArray.PlaneSlice          = view.planeSlice;
+			desc.Texture2DArray.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		case EImageType::_3D:
+			desc.Texture3D.MostDetailedMip     = view.mostDetailedMip;
+			desc.Texture3D.MipLevels           = view.mipLevels;
+			desc.Texture3D.ResourceMinLODClamp = view.minLODClamp;
+			break;
+		}
+
+		auto& images = static_cast<DX12FrameImage*>(view.image)->resources();
+
+		std::uint32_t freeHeapIndex = findFree();
+		m_SearchStart               = freeHeapIndex >> 6;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = m_CPUStart;
+		descriptorHandle.ptr += freeHeapIndex * m_HeapInc;
+
+		context->device()->CreateShaderResourceView(images[index].get(), &desc, descriptorHandle);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+		++m_Size;
+		return { this, freeHeapIndex };
+	}
+
 	D3D12_GPU_DESCRIPTOR_HANDLE DX12DescriptorHeap::descriptorHandle(std::uint32_t index) const
 	{
 		D3D12_GPU_DESCRIPTOR_HANDLE handle = m_GPUStart;

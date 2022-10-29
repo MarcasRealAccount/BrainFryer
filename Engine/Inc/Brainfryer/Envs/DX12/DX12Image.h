@@ -50,6 +50,8 @@ namespace Brainfryer::DX12
 		DX12Image(const ImageInfo& info);
 		~DX12Image();
 
+		virtual void resize(std::uint16_t width, std::uint16_t height = 1, std::uint16_t depth = 1) override;
+
 		virtual void copyFrom(CommandList* commandList, BufferImageView bufferView, Point3D destOffset = { 0, 0, 0 }, Rect3D bufferRect = { -1, -1, -1, 0, 0, 0 }) override;
 
 		virtual void transition(CommandList* commandList, EImageState state) override;
@@ -59,9 +61,10 @@ namespace Brainfryer::DX12
 		virtual EImageType    type() const override { return m_Type; }
 		virtual EFormat       format() const override { return m_Format; }
 		virtual EImageState   state() const override { return m_State; }
-		virtual std::uint16_t width() const override { return m_Width; }
-		virtual std::uint16_t height() const override { return m_Height; }
-		virtual std::uint16_t depth() const override { return m_Depth; }
+		virtual std::uint16_t width() const override { return static_cast<std::uint16_t>(m_Size.w); }
+		virtual std::uint16_t height() const override { return static_cast<std::uint16_t>(m_Size.h); }
+		virtual std::uint16_t depth() const override { return static_cast<std::uint16_t>(m_Size.d); }
+		virtual Size3D        size() const override { return m_Size; }
 
 		virtual bool isRenderTarget() const override { return m_Flags & ImageFlags::AllowRenderTarget; };
 		virtual bool isDepthStencil() const override { return m_Flags & ImageFlags::AllowDepthStencil; };
@@ -79,9 +82,8 @@ namespace Brainfryer::DX12
 		EFormat              m_Format;
 		EImageState          m_State;
 		EImageFlags          m_Flags;
-		std::uint16_t        m_Width;
-		std::uint16_t        m_Height;
-		std::uint16_t        m_Depth;
+		std::uint32_t        m_Alignment;
+		Size3D               m_Size;
 		ClearValue           m_ClearValue;
 	};
 
@@ -90,6 +92,8 @@ namespace Brainfryer::DX12
 	public:
 		DX12FrameImage(const FrameImageInfo& info);
 		~DX12FrameImage();
+
+		virtual void resize(std::uint32_t index, std::uint16_t width, std::uint16_t height = 1, std::uint16_t depth = 1) override;
 
 		virtual void copyFrom(CommandList* commandList, std::uint32_t index, BufferImageView bufferView, Point3D destOffset = { 0, 0, 0 }, Rect3D bufferRect = { -1, -1, -1, 0, 0, 0 }) override;
 
@@ -100,9 +104,10 @@ namespace Brainfryer::DX12
 		virtual EImageType    type() const override { return m_Type; }
 		virtual EFormat       format() const override { return m_Format; }
 		virtual EImageState   state(std::uint32_t index) const override { return index < m_States.size() ? m_States[index] : ImageState::Common; }
-		virtual std::uint16_t width() const override { return m_Width; }
-		virtual std::uint16_t height() const override { return m_Height; }
-		virtual std::uint16_t depth() const override { return m_Depth; }
+		virtual std::uint16_t width(std::uint32_t index) const override { return index < m_Resources.size() ? static_cast<std::uint16_t>(m_Sizes[index].w) : 0; }
+		virtual std::uint16_t height(std::uint32_t index) const override { return index < m_Resources.size() ? static_cast<std::uint16_t>(m_Sizes[index].h) : 0; }
+		virtual std::uint16_t depth(std::uint32_t index) const override { return index < m_Resources.size() ? static_cast<std::uint16_t>(m_Sizes[index].d) : 0; }
+		virtual Size3D        size(std::uint32_t index) const override { return index < m_Resources.size() ? m_Sizes[index] : Size3D { 0, 0, 0 }; }
 		virtual std::uint32_t imageCount() const override { return static_cast<std::uint32_t>(m_Resources.size()); }
 
 		virtual bool isRenderTarget() const override { return m_Flags & ImageFlags::AllowRenderTarget; };
@@ -118,13 +123,12 @@ namespace Brainfryer::DX12
 	private:
 		std::vector<Com<ID3D12Resource2>> m_Resources;
 		std::vector<EImageState>          m_States;
+		std::vector<Size3D>               m_Sizes;
 
 		EImageType    m_Type;
 		EFormat       m_Format;
 		EImageFlags   m_Flags;
-		std::uint16_t m_Width;
-		std::uint16_t m_Height;
-		std::uint16_t m_Depth;
+		std::uint32_t m_Alignment;
 		ClearValue    m_ClearValue;
 	};
 } // namespace Brainfryer::DX12

@@ -17,9 +17,8 @@ namespace Brainfryer::Utils::UTF
 			return 2;
 		else if (c <= 0xEF)
 			return 3;
-		else if (c <= 0xF7)
+		else
 			return 4;
-		return 0;
 	}
 
 	constexpr std::uint8_t UTF8Length(std::uint32_t codepoint)

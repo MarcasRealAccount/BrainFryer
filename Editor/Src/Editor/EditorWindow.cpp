@@ -20,6 +20,7 @@ namespace Brainfryer::Editor
 	void EditorWindow::render()
 	{
 		bool leaveOpen = true;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
 		bool isActive  = ImGui::Begin(m_WindowName.c_str(), &leaveOpen);
 		if (isActive)
 		{
@@ -31,6 +32,7 @@ namespace Brainfryer::Editor
 				       static_cast<std::uint32_t>(windowSize.y) };
 		}
 		ImGui::End();
+		ImGui::PopStyleVar();
 		if (!leaveOpen)
 			m_Application->removeWindow(m_ID);
 	}

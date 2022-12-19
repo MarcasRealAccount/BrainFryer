@@ -59,6 +59,8 @@ namespace Brainfryer::DX12
 		HANDLE                     m_FrameEvent;
 		std::vector<std::uint64_t> m_FrameValues;
 
+		std::uint32_t m_FramesBeforeWait = 0;
+
 		std::uint32_t m_FrameCount;
 	};
 } // namespace Brainfryer::DX12

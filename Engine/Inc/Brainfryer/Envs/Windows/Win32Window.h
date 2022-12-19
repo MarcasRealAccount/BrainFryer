@@ -96,5 +96,7 @@ namespace Brainfryer::Windows
 		Point         m_LastCursorPos { 0, 0 };
 
 		std::vector<std::uint8_t> m_RawInput;
+
+		std::uint32_t m_EventCount;
 	};
 } // namespace Brainfryer::Windows

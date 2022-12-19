@@ -424,6 +424,7 @@ namespace Brainfryer::Windows
 		WIN32API SHORT GetKeyState(int nKeycode);
 
 		WIN32API void* AddVectoredExceptionHandler(ULONG First, PVECTORED_EXCEPTION_HANDLER Handler);
+		WIN32API ULONG RemoveVectoredExceptionHandler(void* Handle);
 
 		WIN32API HRESULT DwmExtendFrameIntoClientArea(HWND hWnd, const MARGINS* pMarInset);
 	}

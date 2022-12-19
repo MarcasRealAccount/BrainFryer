@@ -91,7 +91,7 @@ namespace Brainfryer::DX12
 		desc.Buffer.Flags               = isRaw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
 
 		context->device()->CreateShaderResourceView(static_cast<DX12Buffer*>(view.buffer)->handle().get(), &desc, descriptorHandle);
-		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << (freeHeapIndex & 0x3F));
 		++m_Size;
 		return DescriptorHeapRef { this, freeHeapIndex };
 	}
@@ -146,7 +146,7 @@ namespace Brainfryer::DX12
 		}
 
 		context->device()->CreateShaderResourceView(static_cast<DX12Image*>(view.image)->handle().get(), &desc, descriptorHandle);
-		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << (freeHeapIndex & 0x3F));
 		++m_Size;
 		return DescriptorHeapRef { this, freeHeapIndex };
 	}
@@ -206,7 +206,7 @@ namespace Brainfryer::DX12
 			descriptorHandle.ptr += freeHeapIndex * m_HeapInc;
 
 			context->device()->CreateShaderResourceView(images[i].get(), &desc, descriptorHandle);
-			m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+			m_AllocationMap[m_SearchStart] &= ~(1ULL << (freeHeapIndex & 0x3F));
 			++m_Size;
 			refs[i] = { this, freeHeapIndex };
 		}
@@ -265,7 +265,7 @@ namespace Brainfryer::DX12
 		descriptorHandle.ptr += freeHeapIndex * m_HeapInc;
 
 		context->device()->CreateShaderResourceView(images[index].get(), &desc, descriptorHandle);
-		m_AllocationMap[m_SearchStart] &= ~(1ULL << freeHeapIndex & 0x3F);
+		m_AllocationMap[m_SearchStart] &= ~(1ULL << (freeHeapIndex & 0x3F));
 		++m_Size;
 		return { this, freeHeapIndex };
 	}

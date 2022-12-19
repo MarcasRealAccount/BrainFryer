@@ -7,15 +7,26 @@ namespace Brainfryer::Utils::Intrinsics
 	{
 		unsigned char _BitScanForward(unsigned long* index, unsigned long mask);
 		unsigned char _BitScanForward64(unsigned long* index, unsigned long long mask);
+
+		int __builtin_ffs(int x);
+		int __builtin_ffsl(long x);
+		int __builtin_ffsll(long long x);
 	}
 
 	std::uint32_t BitScanForward(std::uint32_t value)
 	{
+		if (!value)
+			return ~0U;
+
 		if constexpr (Core::s_IsToolsetMSVC)
 		{
-			unsigned long index  = 0;
-			auto          result = _BitScanForward(&index, value);
-			return result ? index : ~0U;
+			unsigned long index;
+			_BitScanForward(&index, static_cast<unsigned long>(value));
+			return static_cast<std::uint32_t>(index);
+		}
+		else if constexpr (Core::s_IsToolsetClang || Core::s_IsToolsetGCC)
+		{
+			return static_cast<std::uint32_t>(__builtin_ffs(static_cast<int>(value)) - 1);
 		}
 		else
 		{
@@ -28,11 +39,18 @@ namespace Brainfryer::Utils::Intrinsics
 
 	std::uint32_t BitScanForward64(std::uint64_t value)
 	{
+		if (!value)
+			return ~0U;
+
 		if constexpr (Core::s_IsToolsetMSVC)
 		{
-			unsigned long index  = 0;
-			auto          result = _BitScanForward64(&index, value);
-			return result ? index : ~0U;
+			unsigned long index;
+			_BitScanForward64(&index, static_cast<unsigned long long>(value));
+			return static_cast<std::uint32_t>(index);
+		}
+		else if constexpr (Core::s_IsToolsetClang || Core::s_IsToolsetGCC)
+		{
+			return static_cast<std::uint32_t>(__builtin_ffsll(static_cast<long long>(value)) - 1);
 		}
 		else
 		{

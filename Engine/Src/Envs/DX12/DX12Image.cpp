@@ -4,8 +4,6 @@
 #include "Brainfryer/Envs/DX12/DX12Context.h"
 #include "Brainfryer/Envs/DX12/DX12Format.h"
 
-#include <fusion.h>
-
 namespace Brainfryer::DX12
 {
 	DX12Image::DX12Image(const ImageInfo& info)

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "BackTrace.h"
+#include "Brainfryer/Window/Window.h"
+#include "Log.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -35,17 +37,69 @@ namespace Brainfryer
 		void       HookThrow();
 	} // namespace Utils
 
+	template <class F, class... Args>
+	std::uint32_t SafeExecute(F&& f, Args&&... args)
+	{
+		try
+		{
+			f(std::forward<Args>(args)...);
+			return 0;
+		}
+		catch (const Utils::Exception& exception)
+		{
+			Log::GetOrCreateLogger(exception.title())->critical("{}", exception);
+			Window::FatalErrorBox(exception.what(), exception.title(), exception.backTrace());
+			return 0x7FFF'FFFF;
+		}
+		catch (const std::exception& exception)
+		{
+			auto& backtrace = Utils::LastBackTrace();
+			if (backtrace.frames().empty())
+				Log::Critical("{}", exception.what());
+			else
+				Log::Critical("{}\n{}", exception.what(), backtrace);
+			Window::FatalErrorBox(exception.what(), "", backtrace);
+			return 0x0000'7FFF;
+		}
+		catch (...)
+		{
+			auto& backtrace = Utils::LastBackTrace();
+			if (backtrace.frames().empty())
+				Log::Critical("Uncaught exception occurred");
+			else
+				Log::Critical("Uncaught exception occurred\n{}", backtrace);
+			Window::FatalErrorBox("Uncaught exception occurred", "", backtrace);
+			return 0x007F'FFFF;
+		}
+	}
+
 	inline void Assert(bool condition, std::string message)
 	{
-		if (!condition)
-			throw Utils::Exception("Assertion", std::move(message), Utils::CaptureBackTrace(1, 10));
+		if constexpr (Core::s_IsConfigDebug)
+		{
+			if (!condition)
+			{
+				if constexpr (!Core::s_IsConfigDist)
+					__debugbreak();
+
+				throw Utils::Exception("Assertion", std::move(message), Utils::CaptureBackTrace(1, 10));
+			}
+		}
 	}
 
 	template <class... Args>
 	void Assert(bool condition, fmt::format_string<Args...> format, Args&&... args)
 	{
-		if (!condition)
-			throw Utils::Exception("Assertion", std::move(format), std::forward<Args>(args)..., Utils::CaptureBackTrace(1, 10));
+		if constexpr (Core::s_IsConfigDebug)
+		{
+			if (!condition)
+			{
+				if constexpr (!Core::s_IsConfigDist)
+					__debugbreak();
+
+				throw Utils::Exception("Assertion", std::move(format), std::forward<Args>(args)..., Utils::CaptureBackTrace(1, 10));
+			}
+		}
 	}
 } // namespace Brainfryer
 

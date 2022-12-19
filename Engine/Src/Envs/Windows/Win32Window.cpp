@@ -41,6 +41,8 @@ namespace Brainfryer::Windows
 		if (!window)
 			return DefWindowProcW(hWnd, Msg, wParam, lParam);
 
+		++window->m_EventCount;
+
 		LRESULT result = 0;
 		if (window->e_WindowMsg(result, window, Msg, wParam, lParam))
 			return result;
@@ -574,6 +576,12 @@ namespace Brainfryer::Windows
 
 	void Win32Window::MsgLoop()
 	{
+		for (auto window : s_Windows)
+		{
+			Log::Info("{} window events per frame", window->m_EventCount);
+			window->m_EventCount = 0;
+		}
+
 		MSG msg {};
 		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
 		{

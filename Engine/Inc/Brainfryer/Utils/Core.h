@@ -21,6 +21,7 @@
 #define BUILD_PLATFORM_AMD64   1
 
 #define BUILD_IS_CONFIG_DEBUG (BUILD_CONFIG == BUILD_CONFIG_DEBUG)
+#define BUILD_IS_CONFIG_RELEASE (BUILD_CONFIG == BUILD_CONFIG_RELEASE)
 #define BUILD_IS_CONFIG_DIST  ((BUILD_CONFIG == BUILD_CONFIG_RELEASE) || (BUILD_CONFIG == BUILD_CONFIG_DIST))
 
 #define BUILD_IS_SYSTEM_WINDOWS (BUILD_SYSTEM == BUILD_SYSTEM_WINDOWS)
@@ -82,7 +83,7 @@ namespace Brainfryer::Core
 	static constexpr bool             s_IsConfigDebug = true;
 	static constexpr bool             s_IsConfigDist  = false;
 #elif BUILD_IS_CONFIG_RELEASE
-	static constexpr BuildConfigFlags   s_Config          = BuildConfigFlag::Debug | BuildConfigFlags::Dist;
+	static constexpr BuildConfigFlags   s_Config          = BuildConfigFlag::Debug | BuildConfigFlag::Dist;
 	static constexpr bool               s_IsConfigDebug   = true;
 	static constexpr bool               s_IsConfigDist    = true;
 #elif BUILD_IS_CONFIG_DIST

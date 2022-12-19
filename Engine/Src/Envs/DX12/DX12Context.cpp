@@ -99,8 +99,6 @@ namespace Brainfryer::DX12
 
 		HRVLT(m_Device->CreateCommandQueue(&queueDesc, m_CommandQueue, m_CommandQueue));
 
-		m_FrameValues.resize(m_FrameCount, 0);
-
 		auto allocators = std::make_unique<DX12CommandAllocator[]>(m_FrameCount);
 		auto cmdLists   = std::make_unique<DX12CommandList[]>(m_FrameCount);
 		for (std::uint32_t i = 0; i < m_FrameCount; ++i)
@@ -111,9 +109,10 @@ namespace Brainfryer::DX12
 		m_CommandAllocatorsMap.insert_or_assign({}, std::move(allocators));
 		m_CommandListAllocationMap.insert_or_assign({}, std::move(cmdLists));
 
+		m_FrameValues.resize(m_FrameCount, 0);
 		HRVLT(m_Device->CreateFence(m_FrameValues[m_FrameIndex], D3D12_FENCE_FLAG_NONE, m_FrameFence, m_FrameFence));
 
-		m_FrameEvent = Windows::CreateEventW(nullptr, false, false, nullptr); // TODO(MarcasRealAccount): Add Windows Event name?
+		m_FrameEvent = Windows::CreateEventW(nullptr, false, false, L"GPU Frame Event"); // TODO(MarcasRealAccount): Add Windows Event name?
 		if (!m_FrameEvent)
 			return;
 	}
@@ -177,6 +176,7 @@ namespace Brainfryer::DX12
 	{
 		if (id == 0)
 		{
+			++m_FramesBeforeWait;
 			m_FrameIndex = (m_FrameIndex + 1) % m_FrameCount;
 
 			std::uint64_t currentValue = m_FrameValues[m_FrameIndex];
@@ -184,6 +184,8 @@ namespace Brainfryer::DX12
 
 			if (m_FrameFence->GetCompletedValue() < m_FrameValues[m_FrameIndex])
 			{
+				//Log::Info("Frames {} rendered before wait", m_FramesBeforeWait);
+				m_FramesBeforeWait = 0;
 				HRVLT(m_FrameFence->SetEventOnCompletion(m_FrameValues[m_FrameIndex], m_FrameEvent));
 				Windows::WaitForSingleObjectEx(m_FrameEvent, Windows::INFINITE, false);
 			}

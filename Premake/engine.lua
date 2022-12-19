@@ -4,10 +4,6 @@ libs.brainfryer = libs.brainfryer or {
 	location   = ""
 }
 
-require("../ThirdParty/glm")
-require("../ThirdParty/entt")
-require("../ThirdParty/spdlog")
-
 local brainfryer = libs.brainfryer
 
 function brainfryer:setup()
@@ -28,16 +24,20 @@ function brainfryer:setup()
 		links({ "d3d12.lib", "dxgi.lib", "Dbghelp.lib" })
 	filter({})
 
-	libs.glm:setupDep()
-	libs.entt:setupDep()
-	libs.spdlog:setupDep()
+	pkgdeps({
+		"glm@latest",
+		"entt@[3.11,4.0)",
+		"spdlog@[1.11,2.0)"
+	})
 end
 
 function brainfryer:setupDep()
 	links({ self.name })
 	externalincludedirs({ self.location .. "/Inc/" })
 
-	libs.glm:setupDep()
-	libs.entt:setupDep()
-	libs.spdlog:setupDep()
+	pkgdeps({
+		"glm@latest",
+		"entt@[3.11,4.0)",
+		"spdlog@[1.11,2.0)"
+	})
 end
